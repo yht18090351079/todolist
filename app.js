@@ -25,7 +25,10 @@ class TaskManager {
         
         // 设置默认日期
         this.setDefaultDates();
-        
+
+        // 检查连接状态
+        await this.checkConnectionStatus();
+
         // 加载数据
         await this.loadData();
         
@@ -89,6 +92,54 @@ class TaskManager {
     setDefaultDates() {
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('reportDate').value = today;
+    }
+
+    // 检查连接状态
+    async checkConnectionStatus() {
+        try {
+            // 更新状态为检查中
+            this.updateConnectionStatus('checking', '检查连接...');
+
+            // 检查飞书API健康状态
+            const healthResult = await window.feishuTaskAPI.checkHealth();
+
+            if (healthResult.success) {
+                this.updateConnectionStatus('connected', '服务正常');
+            } else {
+                this.updateConnectionStatus('disconnected', '服务异常');
+            }
+        } catch (error) {
+            console.error('连接状态检查失败:', error);
+            this.updateConnectionStatus('disconnected', '连接失败');
+        }
+    }
+
+    // 更新连接状态显示
+    updateConnectionStatus(status, message) {
+        const statusElement = document.getElementById('connectionStatus');
+
+        // 移除所有状态类
+        statusElement.classList.remove('connected', 'disconnected', 'checking');
+
+        // 添加当前状态类
+        statusElement.classList.add(status);
+
+        // 更新文本
+        statusElement.querySelector('span').textContent = message;
+
+        // 根据状态更新图标
+        const icon = statusElement.querySelector('i');
+        switch (status) {
+            case 'connected':
+                icon.className = 'fas fa-circle';
+                break;
+            case 'disconnected':
+                icon.className = 'fas fa-exclamation-circle';
+                break;
+            case 'checking':
+                icon.className = 'fas fa-circle';
+                break;
+        }
     }
 
     // 加载数据
@@ -242,6 +293,7 @@ class TaskManager {
     // 同步数据
     async syncData() {
         console.log('同步数据...');
+        await this.checkConnectionStatus();
         await this.loadData();
     }
 

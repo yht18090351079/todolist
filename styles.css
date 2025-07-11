@@ -46,7 +46,58 @@ body {
 
 .header-actions {
     display: flex;
+    align-items: center;
     gap: 1rem;
+}
+
+/* 连接状态指示器 */
+.connection-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: rgba(255,255,255,0.1);
+    border-radius: 6px;
+    font-size: 0.875rem;
+    color: white;
+    border: 1px solid rgba(255,255,255,0.2);
+}
+
+.connection-status i {
+    font-size: 0.75rem;
+}
+
+.connection-status.connected {
+    background: rgba(72, 187, 120, 0.2);
+    border-color: rgba(72, 187, 120, 0.3);
+}
+
+.connection-status.connected i {
+    color: #48bb78;
+}
+
+.connection-status.disconnected {
+    background: rgba(245, 101, 101, 0.2);
+    border-color: rgba(245, 101, 101, 0.3);
+}
+
+.connection-status.disconnected i {
+    color: #f56565;
+}
+
+.connection-status.checking {
+    background: rgba(237, 137, 54, 0.2);
+    border-color: rgba(237, 137, 54, 0.3);
+}
+
+.connection-status.checking i {
+    color: #ed8936;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
 }
 
 /* 主要内容区域 */
