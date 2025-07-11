@@ -757,6 +757,91 @@ body {
     font-size: 0.75rem;
 }
 
+/* 项目输入组合控件 */
+.project-input-container {
+    position: relative;
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.project-select {
+    flex: 1;
+    min-width: 0;
+}
+
+.project-input {
+    flex: 1;
+    min-width: 0;
+    display: none; /* 默认隐藏，通过JavaScript控制显示 */
+}
+
+.project-input.active {
+    display: block;
+}
+
+.project-select.active {
+    display: block;
+}
+
+.btn-toggle-input {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.5rem;
+    height: 2.5rem;
+}
+
+.btn-toggle-input:hover {
+    background: #e9ecef;
+    border-color: #adb5bd;
+}
+
+.btn-toggle-input i {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+.project-input-hint {
+    margin-top: 0.25rem;
+}
+
+.project-input-hint small {
+    color: #6c757d;
+    font-size: 0.75rem;
+}
+
+/* 项目选择状态指示 */
+.project-input-container.select-mode .project-select {
+    display: block;
+}
+
+.project-input-container.select-mode .project-input {
+    display: none;
+}
+
+.project-input-container.input-mode .project-select {
+    display: none;
+}
+
+.project-input-container.input-mode .project-input {
+    display: block;
+}
+
+.project-input-container.select-mode .btn-toggle-input i::before {
+    content: "\f044"; /* fa-edit */
+}
+
+.project-input-container.input-mode .btn-toggle-input i::before {
+    content: "\f0ca"; /* fa-list-ul */
+}
+
 
 
 /* 模态框 */

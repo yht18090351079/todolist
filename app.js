@@ -86,12 +86,79 @@ class TaskManager {
         document.getElementById('reportModal').addEventListener('click', (e) => {
             if (e.target.id === 'reportModal') this.hideReportModal();
         });
+
+        // 初始化项目输入控件
+        this.initProjectInput();
     }
 
     // 设置默认日期
     setDefaultDates() {
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('reportDate').value = today;
+    }
+
+    // 初始化项目输入控件
+    initProjectInput() {
+        const container = document.querySelector('.project-input-container');
+        const projectSelect = document.getElementById('taskProjectSelect');
+        const projectInput = document.getElementById('taskProject');
+        const toggleBtn = document.getElementById('toggleProjectInput');
+
+        // 设置初始状态为选择模式
+        container.classList.add('select-mode');
+
+        // 切换输入方式
+        toggleBtn.addEventListener('click', () => {
+            if (container.classList.contains('select-mode')) {
+                // 切换到输入模式
+                container.classList.remove('select-mode');
+                container.classList.add('input-mode');
+                projectInput.focus();
+                toggleBtn.title = '切换到选择模式';
+            } else {
+                // 切换到选择模式
+                container.classList.remove('input-mode');
+                container.classList.add('select-mode');
+                projectSelect.focus();
+                toggleBtn.title = '切换到输入模式';
+            }
+        });
+
+        // 项目选择变化时同步到输入框
+        projectSelect.addEventListener('change', () => {
+            if (projectSelect.value) {
+                projectInput.value = projectSelect.value;
+            }
+        });
+
+        // 输入框变化时清除选择
+        projectInput.addEventListener('input', () => {
+            projectSelect.value = '';
+        });
+
+        // 更新项目选项
+        this.updateProjectOptions();
+    }
+
+    // 更新项目选项
+    updateProjectOptions() {
+        const projectSelect = document.getElementById('taskProjectSelect');
+
+        // 获取所有唯一的项目名称
+        const projects = [...new Set(this.tasks.map(task => task.project).filter(p => p))].sort();
+
+        // 清空现有选项（保留默认选项）
+        projectSelect.innerHTML = '<option value="">选择已有项目...</option>';
+
+        // 添加项目选项
+        projects.forEach(project => {
+            const option = document.createElement('option');
+            option.value = project;
+            option.textContent = project;
+            projectSelect.appendChild(option);
+        });
+
+        console.log('✅ 项目选项已更新，共', projects.length, '个项目');
     }
 
     // 检查连接状态
@@ -162,6 +229,9 @@ class TaskManager {
 
                 // 提取项目列表
                 this.updateProjectsList();
+
+                // 更新项目选项
+                this.updateProjectOptions();
 
                 // 渲染界面
                 this.renderTasks();
@@ -728,28 +798,84 @@ class TaskManager {
     // 为特定项目添加任务
     addTaskToProject(project) {
         this.showTaskModal();
+
         // 预填项目名称
-        document.getElementById('taskProject').value = project;
+        const projectSelect = document.getElementById('taskProjectSelect');
+        const projectInput = document.getElementById('taskProject');
+        const container = document.querySelector('.project-input-container');
+
+        // 检查项目是否在选项中
+        const projectOption = Array.from(projectSelect.options).find(option => option.value === project);
+        if (projectOption) {
+            // 项目存在，使用选择模式
+            projectSelect.value = project;
+            projectInput.value = project;
+            container.classList.remove('input-mode');
+            container.classList.add('select-mode');
+        } else {
+            // 项目不存在，使用输入模式
+            projectSelect.value = '';
+            projectInput.value = project;
+            container.classList.remove('select-mode');
+            container.classList.add('input-mode');
+        }
     }
 
     // 显示任务模态框
     showTaskModal(task = null) {
         this.currentEditingTask = task;
-        
+
+        // 更新项目选项（确保最新）
+        this.updateProjectOptions();
+
+        const projectSelect = document.getElementById('taskProjectSelect');
+        const projectInput = document.getElementById('taskProject');
+        const container = document.querySelector('.project-input-container');
+
         if (task) {
             // 编辑模式
             document.getElementById('modalTitle').textContent = '编辑任务';
             document.getElementById('taskTitle').value = task.title;
-            document.getElementById('taskProject').value = task.project;
             document.getElementById('taskAssignee').value = task.assignee || '';
             document.getElementById('taskDueDate').value = task.dueDate || '';
             document.getElementById('taskCompleted').checked = task.completed;
+
+            // 处理项目字段
+            if (task.project) {
+                // 检查项目是否在选项中
+                const projectOption = Array.from(projectSelect.options).find(option => option.value === task.project);
+                if (projectOption) {
+                    // 项目存在，使用选择模式
+                    projectSelect.value = task.project;
+                    projectInput.value = task.project;
+                    container.classList.remove('input-mode');
+                    container.classList.add('select-mode');
+                } else {
+                    // 项目不存在，使用输入模式
+                    projectSelect.value = '';
+                    projectInput.value = task.project;
+                    container.classList.remove('select-mode');
+                    container.classList.add('input-mode');
+                }
+            } else {
+                // 没有项目，默认选择模式
+                projectSelect.value = '';
+                projectInput.value = '';
+                container.classList.remove('input-mode');
+                container.classList.add('select-mode');
+            }
         } else {
             // 新增模式
             document.getElementById('modalTitle').textContent = '新增任务';
             document.getElementById('taskForm').reset();
+
+            // 重置项目选择控件到选择模式
+            projectSelect.value = '';
+            projectInput.value = '';
+            container.classList.remove('input-mode');
+            container.classList.add('select-mode');
         }
-        
+
         document.getElementById('taskModal').classList.add('show');
     }
 
