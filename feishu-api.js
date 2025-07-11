@@ -1,56 +1,17 @@
-// 飞书任务管理API集成模块 - 代理模式
+// 飞书任务管理API - 使用代理服务器
 class FeishuTaskAPI {
     constructor() {
-        // 代理服务器地址配置
-        this.proxyUrl = this.getProxyUrl();
-
-        // 飞书配置 - 根据要求.txt中的信息
-        this.config = {
-            APP_ID: 'cli_a8d4bd05dbf8100b',
-            APP_SECRET: 'IRUdgTp1k825LXp1kz2W4gxcvaRAqtcv',
-            BASE_URL: 'https://wcn0pu8598xr.feishu.cn/base/DPIqbB7OWa05ZZsiQi8cP1jnnBb',
-            TABLE_ID: 'tblAyK0L5R7iuKWz',
-            VIEW_ID: 'vewM1Y9Vem'
-        };
-
-        // 是否使用代理模式
-        this.useProxy = true;
-
+        // 代理服务器地址
+        this.proxyUrl = window.location.origin.includes('localhost')
+            ? 'http://localhost:3002'
+            : window.location.origin + '/.netlify/functions';
         console.log('🔧 飞书API代理URL:', this.proxyUrl);
     }
 
-    // 获取代理URL
-    getProxyUrl() {
-        if (window.location.origin.includes('localhost') || window.location.origin.includes('127.0.0.1')) {
-            // 本地开发环境
-            return 'http://localhost:3002';
-        } else {
-            // 生产环境使用Netlify Functions
-            return window.location.origin + '/.netlify/functions';
-        }
-    }
-
-    // 获取访问令牌（代理模式下不需要前端获取）
+    // 获取访问令牌（兼容性方法）
     async getAccessToken() {
         // 代理模式下不需要前端获取令牌
         return { success: true, token: 'proxy_mode' };
-    }
-
-    // 解析飞书URL获取app_token
-    parseFeishuUrl(url) {
-        try {
-            const match = url.match(/\/base\/([a-zA-Z0-9]+)/);
-            if (!match) {
-                throw new Error('无法解析飞书表格URL');
-            }
-
-            return {
-                success: true,
-                appToken: match[1]
-            };
-        } catch (error) {
-            return { success: false, error: error.message };
-        }
     }
 
     // 获取任务记录
