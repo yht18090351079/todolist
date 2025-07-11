@@ -75,10 +75,10 @@ async function createTask(accessToken, taskData) {
             throw new Error('任务事项和所属项目为必填字段');
         }
 
-        // 准备数据映射 - 采用与update-task相同的模式
+        // 准备数据映射 - 使用飞书表格的确切字段名称
         const fieldsData = {};
 
-        // 必填字段
+        // 必填字段 - 使用飞书表格中显示的确切字段名
         fieldsData['任务事项'] = taskData.title;
         fieldsData['所属项目'] = taskData.project;
         fieldsData['创建时间'] = Date.now();
@@ -106,8 +106,9 @@ async function createTask(accessToken, taskData) {
 
         console.log('准备创建的字段数据:', fieldsData);
 
+        // 使用正确的API格式 - 直接传递fields对象
         const postData = JSON.stringify({
-            records: [{ fields: fieldsData }]
+            fields: fieldsData
         });
         
         const options = {
