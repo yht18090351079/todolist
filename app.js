@@ -741,11 +741,13 @@ class TaskManager {
                 await this.loadData(); // 重新加载数据
             } else {
                 console.error('❌ 任务保存失败:', result.error);
-                alert('保存失败: ' + result.error);
+                this.showError('保存失败: ' + result.error);
+                // 不关闭模态框，让用户可以重试或修改
             }
         } catch (error) {
             console.error('❌ 任务保存异常:', error);
-            alert('保存异常: ' + error.message);
+            this.showError('保存异常: ' + error.message);
+            // 不关闭模态框，让用户可以重试
         } finally {
             this.showLoading(false);
         }
