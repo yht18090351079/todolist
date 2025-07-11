@@ -1,4 +1,4 @@
-// Netlify Function - 更新任务 (简化版本)
+// Netlify Function - 更新任务
 const https = require('https');
 
 // 飞书配置
@@ -30,31 +30,53 @@ async function getAccessToken() {
 
         const req = https.request(options, (res) => {
             let data = '';
-            res.on('data', (chunk) => data += chunk);
+            console.log('获取访问令牌响应状态:', res.statusCode);
+
+            res.on('data', (chunk) => {
+                data += chunk;
+            });
             res.on('end', () => {
                 try {
+                    console.log('访问令牌API原始响应:', data);
                     const result = JSON.parse(data);
+
                     if (result.code === 0) {
+                        console.log('✅ 访问令牌获取成功');
                         resolve(result.tenant_access_token);
                     } else {
-                        reject(new Error(`获取访问令牌失败: ${result.msg || '未知错误'}`));
+                        console.error('❌ 获取访问令牌失败:', result);
+                        reject(new Error(`获取访问令牌失败: ${result.msg || result.message || '未知错误'}`));
                     }
                 } catch (error) {
+                    console.error('❌ 解析访问令牌响应失败:', error);
+                    console.error('原始响应数据:', data);
                     reject(error);
                 }
             });
         });
 
-        req.on('error', reject);
+        req.on('error', (error) => {
+            reject(error);
+        });
+
         req.write(postData);
         req.end();
     });
 }
 
+// 解析飞书URL获取app_token
+function parseFeishuUrl(url) {
+    const match = url.match(/\/base\/([a-zA-Z0-9]+)/);
+    if (!match) {
+        throw new Error('无法解析飞书表格URL');
+    }
+    return match[1];
+}
+
 // 更新任务
 async function updateTask(accessToken, taskId, taskData) {
     return new Promise((resolve, reject) => {
-        const appToken = 'DPIqbB7OWa05ZZsiQi8cP1jnnBb'; // 直接使用解析好的值
+        const appToken = parseFeishuUrl(FEISHU_CONFIG.BASE_URL);
         
         // 准备数据映射
         const fieldsData = {};
@@ -64,7 +86,9 @@ async function updateTask(accessToken, taskId, taskData) {
         if (taskData.dueDate !== undefined) fieldsData['截止日期'] = taskData.dueDate;
         if (taskData.completed !== undefined) fieldsData['是否已完成'] = taskData.completed;
 
-        const putData = JSON.stringify({ fields: fieldsData });
+        const putData = JSON.stringify({
+            fields: fieldsData
+        });
         
         const options = {
             hostname: 'open.feishu.cn',
@@ -80,22 +104,36 @@ async function updateTask(accessToken, taskId, taskData) {
 
         const req = https.request(options, (res) => {
             let data = '';
-            res.on('data', (chunk) => data += chunk);
+            console.log('飞书API响应状态:', res.statusCode);
+
+            res.on('data', (chunk) => {
+                data += chunk;
+            });
             res.on('end', () => {
                 try {
+                    console.log('飞书API原始响应:', data);
                     const result = JSON.parse(data);
+                    console.log('飞书API解析结果:', result);
+
                     if (result.code === 0) {
+                        console.log('✅ 飞书API更新成功');
                         resolve(result.data);
                     } else {
-                        reject(new Error(`更新任务失败: ${result.msg || '未知错误'}`));
+                        console.error('❌ 飞书API返回错误:', result);
+                        reject(new Error(`更新任务失败: ${result.msg || result.message || '未知错误'}`));
                     }
                 } catch (error) {
+                    console.error('❌ 解析飞书API响应失败:', error);
+                    console.error('原始响应数据:', data);
                     reject(error);
                 }
             });
         });
 
-        req.on('error', reject);
+        req.on('error', (error) => {
+            reject(error);
+        });
+
         req.write(putData);
         req.end();
     });
@@ -103,25 +141,27 @@ async function updateTask(accessToken, taskId, taskData) {
 
 // 主函数
 exports.handler = async (event, context) => {
-    // 设置超时控制
-    context.callbackWaitsForEmptyEventLoop = false;
-    
+    // 设置CORS头
     const headers = {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Headers': 'Content-Type',
-        'Access-Control-Allow-Methods': 'PUT, OPTIONS',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
         'Content-Type': 'application/json'
     };
 
     // 处理OPTIONS请求
     if (event.httpMethod === 'OPTIONS') {
-        return { statusCode: 200, headers, body: '' };
+        return {
+            statusCode: 200,
+            headers,
+            body: ''
+        };
     }
 
     // 只允许PUT请求
     if (event.httpMethod !== 'PUT') {
         return {
-            statusCode: 200,
+            statusCode: 405,
             headers,
             body: JSON.stringify({ success: false, message: 'Method not allowed' })
         };
@@ -133,47 +173,45 @@ exports.handler = async (event, context) => {
         try {
             requestData = JSON.parse(event.body || '{}');
         } catch (parseError) {
+            console.error('❌ 请求体解析失败:', parseError);
             return {
-                statusCode: 200,
+                statusCode: 400,
                 headers,
-                body: JSON.stringify({ 
-                    success: false, 
-                    message: '请求数据格式错误' 
+                body: JSON.stringify({
+                    success: false,
+                    message: '请求数据格式错误'
                 })
             };
         }
-        
-        const { taskId, ...taskData } = requestData;
 
+        const { taskId, ...taskData } = requestData;
+        
         // 验证taskId
         if (!taskId) {
+            console.error('❌ 缺少任务ID');
             return {
-                statusCode: 200,
+                statusCode: 400,
                 headers,
-                body: JSON.stringify({ 
-                    success: false, 
-                    message: '任务ID为必填字段' 
+                body: JSON.stringify({
+                    success: false,
+                    message: '任务ID为必填字段'
                 })
             };
         }
 
-        console.log('开始更新任务:', taskId, taskData);
-
-        // 设置超时保护
-        const timeoutPromise = new Promise((_, reject) => {
-            setTimeout(() => reject(new Error('请求超时')), 25000); // 25秒超时
-        });
-
-        // 执行更新操作
-        const updatePromise = (async () => {
-            const accessToken = await getAccessToken();
-            return await updateTask(accessToken, taskId, taskData);
-        })();
-
-        // 竞争执行，防止超时
-        const result = await Promise.race([updatePromise, timeoutPromise]);
-
-        console.log('任务更新成功');
+        console.log('开始更新飞书任务:', taskId, taskData);
+        console.log('=== 更新任务API接收的数据 ===');
+        console.log('taskId:', taskId);
+        console.log('taskData:', JSON.stringify(taskData, null, 2));
+        
+        // 获取访问令牌
+        const accessToken = await getAccessToken();
+        console.log('✅ 访问令牌获取成功');
+        
+        // 更新任务
+        const result = await updateTask(accessToken, taskId, taskData);
+        console.log('✅ 任务更新成功');
+        
         return {
             statusCode: 200,
             headers,
@@ -183,22 +221,21 @@ exports.handler = async (event, context) => {
                 message: '任务更新成功'
             })
         };
-
-    } catch (error) {
-        console.error('更新任务失败:', error.message);
         
-        // 根据错误类型返回不同的错误信息
-        let errorMessage = '任务更新失败';
-        if (error.message.includes('超时')) {
-            errorMessage = '请求超时，请稍后重试';
-        } else if (error.message.includes('权限') || error.message.includes('Forbidden')) {
-            errorMessage = '权限不足，请检查飞书应用配置';
-        } else if (error.message.includes('访问令牌')) {
-            errorMessage = '飞书API认证失败';
+    } catch (error) {
+        console.error('❌ 更新任务失败:', error.message);
+        console.error('错误详情:', error);
+
+        // 提供更友好的错误信息
+        let errorMessage = error.message;
+        if (error.message.includes('获取访问令牌失败')) {
+            errorMessage = '飞书API访问失败，请检查应用配置';
+        } else if (error.message.includes('更新任务失败')) {
+            errorMessage = '任务更新失败，可能是权限问题或数据格式错误';
         }
 
         return {
-            statusCode: 200,
+            statusCode: 200, // 改为200，让前端处理错误
             headers,
             body: JSON.stringify({
                 success: false,
