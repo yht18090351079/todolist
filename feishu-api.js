@@ -109,14 +109,19 @@ class FeishuTaskAPI {
                 body: JSON.stringify(taskData)
             });
 
+            console.log('HTTP响应状态:', response.status);
+            console.log('HTTP响应OK:', response.ok);
+
             const result = await response.json();
+            console.log('API响应结果:', result);
 
             if (result.success) {
                 console.log('✅ 任务创建成功');
                 console.log('记录ID:', result.data?.records?.[0]?.record_id);
                 return { success: true, data: result.data };
             } else {
-                throw new Error(result.message || '创建任务失败');
+                console.error('❌ API返回失败:', result);
+                throw new Error(result.message || result.error || '创建任务失败');
             }
         } catch (error) {
             console.error('❌ 创建任务失败:', error);
@@ -141,13 +146,18 @@ class FeishuTaskAPI {
                 body: JSON.stringify({ taskId, ...taskData })
             });
 
+            console.log('HTTP响应状态:', response.status);
+            console.log('HTTP响应OK:', response.ok);
+
             const result = await response.json();
+            console.log('API响应结果:', result);
 
             if (result.success) {
                 console.log('✅ 任务更新成功');
                 return { success: true, data: result.data };
             } else {
-                throw new Error(result.message || '更新任务失败');
+                console.error('❌ API返回失败:', result);
+                throw new Error(result.message || result.error || '更新任务失败');
             }
         } catch (error) {
             console.error('❌ 更新任务失败:', error);

@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API状态测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-card {
+            background: white;
+            padding: 20px;
+            margin: 10px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 API状态测试</h1>
+    
+    <div class="test-card">
+        <h2>1. 健康检查</h2>
+        <button onclick="testHealth()">测试健康检查</button>
+        <div id="healthResult"></div>
+    </div>
+
+    <div class="test-card">
+        <h2>2. 获取任务列表</h2>
+        <button onclick="testGetTasks()">测试获取任务</button>
+        <div id="tasksResult"></div>
+    </div>
+
+    <div class="test-card">
+        <h2>3. 更新任务</h2>
+        <button onclick="testUpdateTask()">测试更新任务</button>
+        <div id="updateResult"></div>
+    </div>
+
+    <div class="test-card">
+        <h2>4. 系统信息</h2>
+        <div class="status info">
+            <strong>当前时间:</strong> <span id="currentTime"></span><br>
+            <strong>用户代理:</strong> <span id="userAgent"></span><br>
+            <strong>页面URL:</strong> <span id="pageUrl"></span>
+        </div>
+    </div>
+
+    <script>
+        // 更新系统信息
+        document.getElementById('currentTime').textContent = new Date().toLocaleString();
+        document.getElementById('userAgent').textContent = navigator.userAgent;
+        document.getElementById('pageUrl').textContent = window.location.href;
+
+        // API基础URL
+        const API_BASE = window.location.origin.includes('localhost') 
+            ? 'http://localhost:3002' 
+            : 'https://tasklit.netlify.app/.netlify/functions';
+
+        // 显示结果
+        function showResult(elementId, success, message, data = null) {
+            const element = document.getElementById(elementId);
+            const statusClass = success ? 'success' : 'error';
+            let html = `<div class="status ${statusClass}">
+                <strong>${success ? '✅ 成功' : '❌ 失败'}:</strong> ${message}
+            </div>`;
+            
+            if (data) {
+                html += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+            }
+            
+            element.innerHTML = html;
+        }
+
+        // 测试健康检查
+        async function testHealth() {
+            try {
+                console.log('测试健康检查...');
+                const response = await fetch(`${API_BASE}/health`);
+                const result = await response.json();
+                
+                if (result.success || response.ok) {
+                    showResult('healthResult', true, '健康检查通过', result);
+                } else {
+                    showResult('healthResult', false, '健康检查失败', result);
+                }
+            } catch (error) {
+                showResult('healthResult', false, `请求失败: ${error.message}`);
+            }
+        }
+
+        // 测试获取任务
+        async function testGetTasks() {
+            try {
+                console.log('测试获取任务...');
+                const response = await fetch(`${API_BASE}/tasks`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    showResult('tasksResult', true, `获取到 ${result.tasks.length} 个任务`, {
+                        count: result.tasks.length,
+                        source: result.source,
+                        firstTask: result.tasks[0]
+                    });
+                } else {
+                    showResult('tasksResult', false, '获取任务失败', result);
+                }
+            } catch (error) {
+                showResult('tasksResult', false, `请求失败: ${error.message}`);
+            }
+        }
+
+        // 测试更新任务
+        async function testUpdateTask() {
+            try {
+                console.log('测试更新任务...');
+                const testData = {
+                    taskId: 'recAhumGQj',
+                    title: '测试更新-' + Date.now(),
+                    project: '测试项目',
+                    assignee: '测试人员',
+                    completed: false
+                };
+
+                const response = await fetch(`${API_BASE}/update-task`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(testData)
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    showResult('updateResult', true, '任务更新成功', {
+                        message: result.message,
+                        updatedFields: result.data?.record?.fields
+                    });
+                } else {
+                    showResult('updateResult', false, `任务更新失败: ${result.message}`, result);
+                }
+            } catch (error) {
+                showResult('updateResult', false, `请求失败: ${error.message}`);
+            }
+        }
+
+        // 页面加载时自动运行健康检查
+        window.onload = function() {
+            testHealth();
+        };
+    </script>
+</body>
+</html>
