@@ -871,22 +871,10 @@ class TaskManager {
             const result = await window.feishuTaskAPI.updateTask(taskId, updateData);
 
             if (result.success) {
-                // 更新本地数据
-                task.completed = completed;
-
-                // 更新完成时间
-                if (completed) {
-                    task.completedTime = updateData.completedTime;
-                    task.完成时间 = updateData.completedTime; // 同时更新中文字段名
-                } else {
-                    task.completedTime = null;
-                    task.完成时间 = null;
-                }
-
-                // 重新渲染界面
-                this.renderTasks();
-
                 console.log('✅ 任务状态更新成功');
+
+                // 重新加载数据，确保与飞书数据一致
+                await this.loadData();
 
                 // 显示成功提示
                 this.showSuccessMessage(completed ? '任务已标记为完成' : '任务已标记为未完成');
