@@ -56,20 +56,20 @@ async function testCreateTask() {
 
         const appToken = 'DPIqbB7OWa05ZZsiQi8cP1jnnBb';
 
-        // 准备测试数据 - 包含所有可能的字段
+        // 准备测试数据 - 只包含最基本的字段
         const fieldsData = {
-            '任务事项': '测试创建任务-' + Date.now(),
-            '所属项目': '测试项目',
-            '对接人': '测试人员',
-            '是否已完成': false,
-            '创建时间': Date.now()
+            '任务事项': '测试创建任务-' + Date.now()
         };
 
         console.log('📝 创建任务数据:', fieldsData);
 
         const postData = JSON.stringify({
-            records: [{ fields: fieldsData }]
+            records: [{
+                fields: fieldsData
+            }]
         });
+
+        console.log('请求体:', postData);
         
         const options = {
             hostname: 'open.feishu.cn',
