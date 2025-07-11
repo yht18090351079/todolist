@@ -9,6 +9,109 @@ class DoubaoAPI {
         };
     }
 
+    // 解析思考过程和最终输出
+    parseThinkingContent(content) {
+        // 查找思考标记
+        const thinkingStart = content.indexOf('<thinking>');
+        const thinkingEnd = content.indexOf('</thinking>');
+
+        let thinkingProcess = '';
+        let finalOutput = '';
+
+        if (thinkingStart !== -1 && thinkingEnd !== -1) {
+            // 提取思考过程
+            thinkingProcess = content.substring(thinkingStart + 10, thinkingEnd).trim();
+            // 提取最终输出（思考标记之后的内容）
+            finalOutput = content.substring(thinkingEnd + 11).trim();
+        } else {
+            // 没有明确的思考标记，尝试其他模式
+            const lines = content.split('\n');
+            let isThinking = false;
+            let thinkingLines = [];
+            let outputLines = [];
+
+            for (const line of lines) {
+                if (line.includes('思考') || line.includes('分析') || line.includes('考虑')) {
+                    isThinking = true;
+                    thinkingLines.push(line);
+                } else if (line.startsWith('#') || line.includes('日报') || line.includes('周报')) {
+                    isThinking = false;
+                    outputLines.push(line);
+                } else if (isThinking) {
+                    thinkingLines.push(line);
+                } else {
+                    outputLines.push(line);
+                }
+            }
+
+            if (thinkingLines.length > 0) {
+                thinkingProcess = thinkingLines.join('\n').trim();
+                finalOutput = outputLines.join('\n').trim();
+            } else {
+                finalOutput = content;
+            }
+        }
+
+        return { thinkingProcess, finalOutput };
+    }
+
+    // 显示思考过程
+    async displayThinkingProcess(thinkingContent, onProgress) {
+        // 添加思考过程标题
+        const thinkingHeader = '🧠 AI思考过程：\n\n';
+        let displayedContent = thinkingHeader;
+        onProgress(displayedContent);
+
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        // 逐字显示思考过程
+        const words = thinkingContent.split('');
+        for (let i = 0; i < words.length; i++) {
+            displayedContent += words[i];
+
+            if (i % 3 === 0 || i === words.length - 1) {
+                onProgress(displayedContent);
+                // 思考过程显示稍快一些
+                await new Promise(resolve => setTimeout(resolve, 8));
+            }
+        }
+
+        // 添加分隔线
+        displayedContent += '\n\n' + '─'.repeat(50) + '\n\n';
+        onProgress(displayedContent);
+        await new Promise(resolve => setTimeout(resolve, 800));
+
+        return displayedContent;
+    }
+
+    // 显示最终输出
+    async displayFinalOutput(finalContent, onProgress, previousContent = '') {
+        let displayedContent = previousContent;
+
+        // 添加最终输出标题
+        if (previousContent) {
+            const outputHeader = '📋 最终报告：\n\n';
+            displayedContent += outputHeader;
+            onProgress(displayedContent);
+            await new Promise(resolve => setTimeout(resolve, 500));
+        }
+
+        // 逐字显示最终内容
+        const words = finalContent.split('');
+        for (let i = 0; i < words.length; i++) {
+            displayedContent += words[i];
+
+            if (i % 2 === 0 || i === words.length - 1) {
+                onProgress(displayedContent);
+                // 最终输出显示稍慢，让用户有时间阅读
+                const delay = /[。！？，；：]/.test(words[i]) ? 120 : 20;
+                await new Promise(resolve => setTimeout(resolve, delay));
+            }
+        }
+
+        return displayedContent;
+    }
+
     // 获取代理服务器URL
     getProxyUrl() {
         // 检测环境：本地开发 vs 生产环境
@@ -19,15 +122,16 @@ class DoubaoAPI {
         }
     }
 
-    // 流式生成文本
+    // 流式生成文本（混合模式：快速获取 + 前端流式显示）
     async generateTextStream(messages, onProgress) {
         try {
+            console.log('开始混合流式输出...');
+
+            // 使用标准端点快速获取完整内容
             const proxyUrl = this.getProxyUrl();
 
-            console.log('开始流式输出...');
-
-            // 使用流式输出端点
-            const response = await fetch(`${proxyUrl}/doubao-stream`, {
+            // 不设置超时，让AI充分思考
+            const response = await fetch(`${proxyUrl}/doubao-chat`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -38,27 +142,34 @@ class DoubaoAPI {
             });
 
             if (!response.ok) {
-                throw new Error(`流式请求失败: ${response.status}`);
+                throw new Error(`请求失败: ${response.status}`);
             }
 
-            // 读取响应体
-            const reader = response.body.getReader();
-            const decoder = new TextDecoder();
-            let fullContent = '';
+            const data = await response.json();
 
-            // 模拟流式输出效果
-            const content = await response.text();
+            if (!data.success) {
+                throw new Error(data.error || '获取内容失败');
+            }
 
-            // 逐字符显示，创建流式效果
-            for (let i = 0; i < content.length; i++) {
-                fullContent += content[i];
+            const fullContent = data.data.choices[0].message.content;
+            console.log('✅ 内容获取成功，开始显示思考过程和最终输出');
 
-                // 每几个字符调用一次进度回调
-                if (i % 3 === 0 || i === content.length - 1) {
-                    onProgress(fullContent);
-                    // 添加小延迟创建打字效果
-                    await new Promise(resolve => setTimeout(resolve, 20));
-                }
+            // 解析思考过程和最终输出
+            const { thinkingProcess, finalOutput } = this.parseThinkingContent(fullContent);
+
+            // 显示思考过程
+            if (thinkingProcess && onProgress) {
+                console.log('🧠 显示AI思考过程...');
+                await this.displayThinkingProcess(thinkingProcess, onProgress);
+            }
+
+            // 显示最终输出
+            if (finalOutput && onProgress) {
+                console.log('📝 显示最终报告...');
+                await this.displayFinalOutput(finalOutput, onProgress);
+            } else if (onProgress) {
+                // 如果没有分离出思考过程，直接显示全部内容
+                await this.displayFinalOutput(fullContent, onProgress);
             }
 
             return {
@@ -67,7 +178,7 @@ class DoubaoAPI {
             };
 
         } catch (error) {
-            console.error('流式输出失败:', error);
+            console.error('混合流式输出失败:', error);
             throw error;
         }
     }
@@ -179,10 +290,31 @@ class DoubaoAPI {
         } catch (error) {
             console.error('❌ 豆包API调用失败:', error);
 
-            // 如果是超时或网络错误，返回降级内容
-            if (error.name === 'AbortError' || error.message.includes('timeout') || error.message.includes('504')) {
+            // 如果是超时或网络错误，返回降级内容并模拟流式显示
+            if (error.name === 'AbortError' || error.message.includes('timeout') || error.message.includes('504') || error.message.includes('流式请求失败')) {
                 console.log('⚠️ API超时，使用降级模式');
-                return this.generateFallbackContent(messages);
+
+                // 如果有进度回调，也为降级内容提供流式效果
+                if (onProgress && typeof onProgress === 'function') {
+                    const fallbackResult = this.generateFallbackContent(messages);
+                    const content = fallbackResult.content;
+
+                    // 为降级内容也提供打字机效果
+                    let displayedContent = '';
+                    const words = content.split('');
+
+                    for (let i = 0; i < words.length; i++) {
+                        displayedContent += words[i];
+                        if (i % 3 === 0 || i === words.length - 1) {
+                            onProgress(displayedContent);
+                            await new Promise(resolve => setTimeout(resolve, 10));
+                        }
+                    }
+
+                    return fallbackResult;
+                } else {
+                    return this.generateFallbackContent(messages);
+                }
             }
 
             return {
@@ -215,9 +347,20 @@ class DoubaoAPI {
                 return diffDays <= 3 && diffDays >= 0;
             });
 
-            // 构建提示词
-            const prompt = `请根据以下任务信息生成一份专业的工作日报：
+            // 构建提示词，引导AI显示思考过程
+            const prompt = `请根据以下任务信息生成一份专业的工作日报。
 
+首先，请在<thinking>标签内展示你的分析思考过程，然后生成最终的日报内容。
+
+<thinking>
+请在这里分析：
+1. 任务完成情况的整体评估
+2. 工作重点和亮点识别
+3. 存在的问题和风险分析
+4. 明日工作的优先级规划
+</thinking>
+
+任务数据：
 日期: ${date}
 ${projectFilter ? `项目: ${projectFilter}` : ''}
 
@@ -320,8 +463,18 @@ ${urgentTasks.map(task => `- ${task.title} (${task.project}) - 负责人: ${task
                 }
             });
 
-            // 构建提示词
-            const prompt = `请根据以下任务信息生成一份专业的工作周报：
+            // 构建提示词，引导AI显示思考过程
+            const prompt = `请根据以下任务信息生成一份专业的工作周报。
+
+首先，请在<thinking>标签内展示你的分析思考过程，然后生成最终的周报内容。
+
+<thinking>
+请在这里分析：
+1. 本周整体工作完成情况评估
+2. 各项目进展的深度分析
+3. 团队协作效果和问题识别
+4. 下周工作重点和资源规划
+</thinking>
 
 周报时间: ${weekStart.toLocaleDateString()} - ${weekEnd.toLocaleDateString()}
 ${projectFilter ? `项目: ${projectFilter}` : ''}
