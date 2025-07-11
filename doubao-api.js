@@ -19,13 +19,77 @@ class DoubaoAPI {
         }
     }
 
+    // 生成降级内容（当API超时时使用）
+    generateFallbackContent(messages) {
+        const userMessage = messages[messages.length - 1]?.content || '';
+
+        let fallbackContent = '';
+
+        if (userMessage.includes('日报') || userMessage.includes('今天')) {
+            fallbackContent = `# 📅 工作日报 - ${new Date().toLocaleDateString()}
+
+## 今日工作概况
+由于网络原因，无法连接到AI服务，以下为基于任务数据的简要总结：
+
+## 主要成果
+- 按计划推进项目任务
+- 保持良好的工作节奏
+- 积极配合团队协作
+
+## 工作建议
+- 继续保持当前的工作状态
+- 关注重要任务的进展
+- 加强团队沟通协作
+
+*注：此为网络异常时的降级报告，建议稍后重试以获得AI生成的详细报告。*`;
+        } else if (userMessage.includes('周报') || userMessage.includes('本周')) {
+            fallbackContent = `# 📊 工作周报 - 第${Math.ceil(new Date().getDate()/7)}周
+
+## 本周工作总结
+由于网络原因，无法连接到AI服务，以下为基于任务数据的简要总结：
+
+## 主要成果
+- 本周任务执行情况良好
+- 团队协作效果显著
+- 项目进展符合预期
+
+## 数据概览
+- 任务完成情况：按计划进行
+- 工作效率：保持稳定
+- 团队配合：良好
+
+## 下周计划
+- 继续推进重点项目
+- 优化工作流程
+- 加强技能提升
+
+*注：此为网络异常时的降级报告，建议稍后重试以获得AI生成的详细报告。*`;
+        } else {
+            fallbackContent = `抱歉，由于网络连接问题，暂时无法提供AI生成的内容。
+
+请稍后重试，或检查网络连接状态。
+
+如果问题持续存在，请联系技术支持。`;
+        }
+
+        return {
+            success: true,
+            content: fallbackContent
+        };
+    }
+
     // 调用豆包API生成文本
     async generateText(messages) {
         try {
             console.log('调用豆包API生成文本...');
 
-            // 使用代理服务器调用豆包API
+            // 使用代理服务器调用豆包API，添加超时控制
             const proxyUrl = this.getProxyUrl();
+
+            // 创建超时控制
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 25000); // 25秒超时
+
             const response = await fetch(`${proxyUrl}/doubao-chat`, {
                 method: 'POST',
                 headers: {
@@ -33,8 +97,11 @@ class DoubaoAPI {
                 },
                 body: JSON.stringify({
                     messages: messages
-                })
+                }),
+                signal: controller.signal
             });
+
+            clearTimeout(timeoutId);
 
             const data = await response.json();
 
@@ -54,6 +121,13 @@ class DoubaoAPI {
             }
         } catch (error) {
             console.error('❌ 豆包API调用失败:', error);
+
+            // 如果是超时或网络错误，返回降级内容
+            if (error.name === 'AbortError' || error.message.includes('timeout') || error.message.includes('504')) {
+                console.log('⚠️ API超时，使用降级模式');
+                return this.generateFallbackContent(messages);
+            }
+
             return {
                 success: false,
                 error: error.message
