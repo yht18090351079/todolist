@@ -1182,21 +1182,38 @@ class TaskManager {
                 return false;
             }
 
-            // 检查完成时间字段（可能的字段名）
+            // 检查完成时间字段（可能的字段名和格式）
             let completedTime = task.completedTime || task.completeTime || task.完成时间;
 
-            // 如果没有完成时间，但任务已完成，使用创建时间作为备选
-            if (!completedTime && task.createTime) {
-                console.log(`⚠️ 任务 "${task.title}" 没有完成时间，使用创建时间作为备选`);
-                completedTime = task.createTime;
+            // 处理不同格式的完成时间
+            let completedDate;
+            if (completedTime) {
+                if (typeof completedTime === 'number') {
+                    // 时间戳格式
+                    completedDate = new Date(completedTime);
+                } else if (typeof completedTime === 'string' && completedTime.trim() !== '') {
+                    // 文本格式，尝试解析
+                    completedDate = new Date(completedTime);
+                    if (isNaN(completedDate.getTime())) {
+                        console.log(`⚠️ 任务 "${task.title}" 完成时间格式无法解析: "${completedTime}"`);
+                        completedDate = null;
+                    }
+                } else {
+                    completedDate = null;
+                }
             }
 
-            if (!completedTime) {
-                console.log(`❌ 任务 "${task.title}" 没有时间信息，跳过`);
+            // 如果没有有效的完成时间，但任务已完成，使用创建时间作为备选
+            if (!completedDate && task.createTime) {
+                console.log(`⚠️ 任务 "${task.title}" 没有有效完成时间，使用创建时间作为备选`);
+                completedDate = new Date(task.createTime);
+            }
+
+            if (!completedDate || isNaN(completedDate.getTime())) {
+                console.log(`❌ 任务 "${task.title}" 没有有效时间信息，跳过`);
                 return false;
             }
 
-            const completedDate = new Date(completedTime);
             const isInRange = completedDate >= startOfDay && completedDate < endOfDay;
 
             if (isInRange) {
@@ -1230,19 +1247,34 @@ class TaskManager {
                 return false;
             }
 
-            // 检查完成时间字段（可能的字段名）
+            // 检查完成时间字段（可能的字段名和格式）
             let completedTime = task.completedTime || task.completeTime || task.完成时间;
 
-            // 如果没有完成时间，但任务已完成，使用创建时间作为备选
-            if (!completedTime && task.createTime) {
-                completedTime = task.createTime;
+            // 处理不同格式的完成时间
+            let completedDate;
+            if (completedTime) {
+                if (typeof completedTime === 'number') {
+                    // 时间戳格式
+                    completedDate = new Date(completedTime);
+                } else if (typeof completedTime === 'string' && completedTime.trim() !== '') {
+                    // 文本格式，尝试解析
+                    completedDate = new Date(completedTime);
+                    if (isNaN(completedDate.getTime())) {
+                        completedDate = null;
+                    }
+                } else {
+                    completedDate = null;
+                }
             }
 
-            if (!completedTime) {
+            // 如果没有有效的完成时间，但任务已完成，使用创建时间作为备选
+            if (!completedDate && task.createTime) {
+                completedDate = new Date(task.createTime);
+            }
+
+            if (!completedDate || isNaN(completedDate.getTime())) {
                 return false;
             }
-
-            const completedDate = new Date(completedTime);
             return completedDate >= startOfWeek && completedDate < endOfWeek;
         });
     }

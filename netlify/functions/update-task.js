@@ -79,14 +79,34 @@ async function updateTask(accessToken, taskId, taskData) {
 
         // 处理完成时间字段
         if (taskData.completedTime !== undefined) {
-            if (taskData.completedTime === null) {
-                // 清空完成时间
-                fieldsData['完成时间'] = null;
-                console.log('清空任务完成时间');
+            if (taskData.completedTime === null || taskData.completedTime === '') {
+                // 清空完成时间 - 设置为空字符串，因为飞书中该字段是文本类型
+                fieldsData['完成时间'] = '';
+                console.log('清空任务完成时间（设置为空字符串）');
             } else {
-                // 设置完成时间
-                fieldsData['完成时间'] = taskData.completedTime;
-                console.log('设置任务完成时间:', new Date(taskData.completedTime).toLocaleString());
+                // 设置完成时间 - 确保是有效的时间戳
+                try {
+                    const timestamp = Number(taskData.completedTime);
+                    if (isNaN(timestamp) || timestamp <= 0) {
+                        console.warn('无效的完成时间戳，跳过设置:', taskData.completedTime);
+                    } else {
+                        // 转换为文本格式，因为飞书中该字段是文本类型
+                        const completedDate = new Date(timestamp);
+                        const formattedTime = completedDate.toLocaleString('zh-CN', {
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit',
+                            hour12: false
+                        });
+                        fieldsData['完成时间'] = formattedTime;
+                        console.log('设置任务完成时间文本:', formattedTime, '(原时间戳:', timestamp, ')');
+                    }
+                } catch (error) {
+                    console.error('完成时间处理错误:', error, '原值:', taskData.completedTime);
+                }
             }
         }
 
