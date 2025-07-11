@@ -1,11 +1,11 @@
 // 豆包大模型API集成模块
 class DoubaoAPI {
     constructor() {
-        // 豆包API配置 - 根据要求.txt中的信息
+        // 豆包API配置 - 使用正确的API密钥和模型ID
         this.config = {
             API_URL: 'https://ark.cn-beijing.volces.com/api/v3/chat/completions',
-            API_KEY: 'e90111f2-f6a4-40c3-a657-b8383007666f',
-            MODEL: 'doubao-seed-1-6-thinking-250615'
+            API_KEY: 'e90111f2-f6a4-40c3-a657-b8383007166f',
+            MODEL: 'doubao-seed-1.6-250615'
         };
     }
 
