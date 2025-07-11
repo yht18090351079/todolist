@@ -93,30 +93,86 @@ class TaskManager {
     // 加载数据
     async loadData() {
         this.showLoading(true);
-        
+
         try {
             // 从飞书获取任务数据
             const result = await window.feishuTaskAPI.getTasks();
-            
+
             if (result.success) {
-                this.tasks = result.tasks;
+                this.tasks = result.tasks || [];
                 console.log('✅ 任务数据加载成功，共', this.tasks.length, '条');
-                
+
+                // 显示数据来源信息
+                if (result.source === 'fallback' || result.source === 'local_fallback' || result.source === 'direct_fallback') {
+                    console.log('⚠️ 使用备用数据，来源:', result.source);
+                    this.showDataSourceInfo(result.source, result.error);
+                }
+
                 // 提取项目列表
                 this.updateProjectsList();
-                
+
                 // 渲染界面
                 this.renderTasks();
             } else {
                 console.error('❌ 加载任务数据失败:', result.error);
+                // 即使失败也尝试使用空数据渲染界面
+                this.tasks = [];
+                this.renderTasks();
                 this.showError('加载数据失败: ' + result.error);
             }
         } catch (error) {
             console.error('❌ 加载数据异常:', error);
+            // 异常情况下也要渲染界面
+            this.tasks = [];
+            this.renderTasks();
             this.showError('加载数据异常: ' + error.message);
         } finally {
             this.showLoading(false);
         }
+    }
+
+    // 显示数据来源信息
+    showDataSourceInfo(source, error) {
+        const sourceMessages = {
+            'fallback': '当前使用飞书服务器备用数据',
+            'local_fallback': '当前使用本地备用数据（代理服务不可用）',
+            'direct_fallback': '当前使用本地备用数据（直连模式失败）'
+        };
+
+        const message = sourceMessages[source] || '使用备用数据';
+
+        // 创建提示条
+        const infoBar = document.createElement('div');
+        infoBar.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: #fff3cd;
+            color: #856404;
+            padding: 0.75rem;
+            text-align: center;
+            border-bottom: 1px solid #ffeaa7;
+            z-index: 1000;
+            font-size: 0.875rem;
+        `;
+        infoBar.innerHTML = `
+            <i class="fas fa-info-circle"></i>
+            ${message}
+            ${error ? `<br><small>原因: ${error}</small>` : ''}
+            <button onclick="this.parentElement.remove()" style="float: right; background: none; border: none; color: #856404; cursor: pointer;">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
+
+        document.body.insertBefore(infoBar, document.body.firstChild);
+
+        // 5秒后自动隐藏
+        setTimeout(() => {
+            if (infoBar.parentElement) {
+                infoBar.remove();
+            }
+        }, 5000);
     }
 
     // 同步数据
@@ -423,9 +479,6 @@ class TaskManager {
 
     // 保存任务
     async saveTask() {
-        const form = document.getElementById('taskForm');
-        const formData = new FormData(form);
-        
         const taskData = {
             title: document.getElementById('taskTitle').value.trim(),
             project: document.getElementById('taskProject').value.trim(),
