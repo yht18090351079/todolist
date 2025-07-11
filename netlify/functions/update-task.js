@@ -61,7 +61,20 @@ async function updateTask(accessToken, taskId, taskData) {
         if (taskData.title !== undefined) fieldsData['任务事项'] = taskData.title;
         if (taskData.project !== undefined) fieldsData['所属项目'] = taskData.project;
         if (taskData.assignee !== undefined) fieldsData['对接人'] = taskData.assignee;
-        if (taskData.dueDate !== undefined) fieldsData['截止日期'] = taskData.dueDate;
+
+        // 处理日期字段 - 只有当日期不为空时才设置
+        if (taskData.dueDate !== undefined && taskData.dueDate !== '') {
+            // 将日期转换为时间戳（毫秒）
+            try {
+                const dateObj = new Date(taskData.dueDate);
+                if (!isNaN(dateObj.getTime())) {
+                    fieldsData['截止日期'] = dateObj.getTime();
+                }
+            } catch (error) {
+                console.warn('日期格式转换失败:', taskData.dueDate, error);
+            }
+        }
+
         if (taskData.completed !== undefined) fieldsData['是否已完成'] = taskData.completed;
 
         const putData = JSON.stringify({ fields: fieldsData });

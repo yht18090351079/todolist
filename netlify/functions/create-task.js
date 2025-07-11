@@ -75,9 +75,20 @@ async function createTask(accessToken, taskData) {
             '任务事项': taskData.title,
             '所属项目': taskData.project,
             '对接人': taskData.assignee || '',
-            '截止日期': taskData.dueDate || '',
             '是否已完成': taskData.completed || false
         };
+
+        // 处理日期字段 - 只有当日期不为空时才设置
+        if (taskData.dueDate && taskData.dueDate !== '') {
+            try {
+                const dateObj = new Date(taskData.dueDate);
+                if (!isNaN(dateObj.getTime())) {
+                    fieldsData['截止日期'] = dateObj.getTime();
+                }
+            } catch (error) {
+                console.warn('日期格式转换失败:', taskData.dueDate, error);
+            }
+        }
 
         const postData = JSON.stringify({
             records: [{ fields: fieldsData }]
