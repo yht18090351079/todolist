@@ -3,68 +3,11 @@ class FeishuAPI {
     constructor() {
         this.accessToken = null;
         this.tokenExpiry = 0;
-        this.isNetlify = CONFIG.FEISHU.BASE_URL.includes('.netlify');
+        // 检查是否是Netlify环境
+        this.isNetlify = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
     }
 
-    // 通用API调用方法
-    async callAPI(apiPath, method = 'GET', data = null, needAuth = true) {
-        try {
-            let response;
 
-            if (this.isNetlify) {
-                // Netlify Functions调用方式
-                const requestBody = {
-                    apiPath: apiPath,
-                    method: method
-                };
-
-                if (data) {
-                    requestBody.data = data;
-                }
-
-                const headers = {
-                    'Content-Type': 'application/json'
-                };
-
-                if (needAuth) {
-                    const token = await this.getAccessToken();
-                    headers['Authorization'] = `Bearer ${token}`;
-                }
-
-                response = await fetch(CONFIG.FEISHU.BASE_URL, {
-                    method: 'POST',
-                    headers: headers,
-                    body: JSON.stringify(requestBody)
-                });
-            } else {
-                // 本地开发环境调用方式
-                const headers = {
-                    'Content-Type': 'application/json'
-                };
-
-                if (needAuth) {
-                    const token = await this.getAccessToken();
-                    headers['Authorization'] = `Bearer ${token}`;
-                }
-
-                const requestOptions = {
-                    method: method,
-                    headers: headers
-                };
-
-                if (data && method !== 'GET') {
-                    requestOptions.body = JSON.stringify(data);
-                }
-
-                response = await fetch(`${CONFIG.FEISHU.BASE_URL}${apiPath}`, requestOptions);
-            }
-
-            return await response.json();
-        } catch (error) {
-            console.error('API调用失败:', error);
-            throw error;
-        }
-    }
 
     // 获取访问令牌
     async getAccessToken() {
@@ -138,17 +81,21 @@ class FeishuAPI {
     // 创建记录
     async createRecord(fields) {
         const token = await this.getAccessToken();
-        const url = `${CONFIG.FEISHU.BASE_URL}/bitable/v1/apps/${CONFIG.FEISHU.BITABLE_ID}/tables/${CONFIG.FEISHU.TABLE_ID}/records`;
+        const apiPath = `/bitable/v1/apps/${CONFIG.FEISHU.BITABLE_ID}/tables/${CONFIG.FEISHU.TABLE_ID}/records`;
 
         try {
-            const response = await fetch(url, {
+            const response = await fetch(CONFIG.FEISHU.API_URL, {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify({
-                    fields: fields
+                    apiPath: apiPath,
+                    method: 'POST',
+                    data: {
+                        fields: fields
+                    }
                 })
             });
 
@@ -168,17 +115,21 @@ class FeishuAPI {
     // 更新记录
     async updateRecord(recordId, fields) {
         const token = await this.getAccessToken();
-        const url = `${CONFIG.FEISHU.BASE_URL}/bitable/v1/apps/${CONFIG.FEISHU.BITABLE_ID}/tables/${CONFIG.FEISHU.TABLE_ID}/records/${recordId}`;
+        const apiPath = `/bitable/v1/apps/${CONFIG.FEISHU.BITABLE_ID}/tables/${CONFIG.FEISHU.TABLE_ID}/records/${recordId}`;
 
         try {
-            const response = await fetch(url, {
-                method: 'PUT',
+            const response = await fetch(CONFIG.FEISHU.API_URL, {
+                method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify({
-                    fields: fields
+                    apiPath: apiPath,
+                    method: 'PUT',
+                    data: {
+                        fields: fields
+                    }
                 })
             });
 
@@ -198,15 +149,19 @@ class FeishuAPI {
     // 删除记录
     async deleteRecord(recordId) {
         const token = await this.getAccessToken();
-        const url = `${CONFIG.FEISHU.BASE_URL}/bitable/v1/apps/${CONFIG.FEISHU.BITABLE_ID}/tables/${CONFIG.FEISHU.TABLE_ID}/records/${recordId}`;
+        const apiPath = `/bitable/v1/apps/${CONFIG.FEISHU.BITABLE_ID}/tables/${CONFIG.FEISHU.TABLE_ID}/records/${recordId}`;
 
         try {
-            const response = await fetch(url, {
-                method: 'DELETE',
+            const response = await fetch(CONFIG.FEISHU.API_URL, {
+                method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    apiPath: apiPath,
+                    method: 'DELETE'
+                })
             });
 
             const data = await response.json();
@@ -225,15 +180,19 @@ class FeishuAPI {
     // 获取表格字段信息
     async getTableFields() {
         const token = await this.getAccessToken();
-        const url = `${CONFIG.FEISHU.BASE_URL}/bitable/v1/apps/${CONFIG.FEISHU.BITABLE_ID}/tables/${CONFIG.FEISHU.TABLE_ID}/fields`;
+        const apiPath = `/bitable/v1/apps/${CONFIG.FEISHU.BITABLE_ID}/tables/${CONFIG.FEISHU.TABLE_ID}/fields`;
 
         try {
-            const response = await fetch(url, {
-                method: 'GET',
+            const response = await fetch(CONFIG.FEISHU.API_URL, {
+                method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    apiPath: apiPath,
+                    method: 'GET'
+                })
             });
 
             const data = await response.json();
