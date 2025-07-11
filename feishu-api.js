@@ -129,17 +129,9 @@ class FeishuTaskAPI {
     // 更新任务
     async updateTask(taskId, taskData) {
         try {
-            return await this.updateTaskViaProxy(taskId, taskData);
-        } catch (error) {
-            console.error('❌ 更新飞书任务失败:', error);
-            return { success: false, error: error.message };
-        }
-    }
-
-    // 通过代理更新任务
-    async updateTaskViaProxy(taskId, taskData) {
-        try {
-            console.log('通过代理更新任务:', taskId, taskData);
+            console.log('开始更新任务到飞书...');
+            console.log('任务ID:', taskId);
+            console.log('更新数据:', JSON.stringify(taskData, null, 2));
 
             const response = await fetch(`${this.proxyUrl}/update-task`, {
                 method: 'PUT',
@@ -148,10 +140,6 @@ class FeishuTaskAPI {
                 },
                 body: JSON.stringify({ taskId, ...taskData })
             });
-
-            if (!response.ok) {
-                throw new Error(`代理服务器错误: ${response.status} ${response.statusText}`);
-            }
 
             const result = await response.json();
 
@@ -162,8 +150,8 @@ class FeishuTaskAPI {
                 throw new Error(result.message || '更新任务失败');
             }
         } catch (error) {
-            console.error('❌ 代理更新任务失败:', error);
-            return { success: false, error: `后端服务不可用: ${error.message}` };
+            console.error('❌ 更新任务失败:', error);
+            return { success: false, error: error.message };
         }
     }
 
