@@ -79,7 +79,15 @@ async function updateTask(accessToken, taskId, taskData) {
 
         // 处理完成时间字段
         if (taskData.completedTime !== undefined) {
-            fieldsData['完成时间'] = taskData.completedTime;
+            if (taskData.completedTime === null) {
+                // 清空完成时间
+                fieldsData['完成时间'] = null;
+                console.log('清空任务完成时间');
+            } else {
+                // 设置完成时间
+                fieldsData['完成时间'] = taskData.completedTime;
+                console.log('设置任务完成时间:', new Date(taskData.completedTime).toLocaleString());
+            }
         }
 
         const putData = JSON.stringify({ fields: fieldsData });

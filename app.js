@@ -856,9 +856,15 @@ class TaskManager {
                 completed: completed
             };
 
-            // 如果标记为完成，记录完成时间
+            // 根据完成状态设置完成时间
             if (completed) {
+                // 标记为完成：记录当前时间
                 updateData.completedTime = Date.now();
+                console.log('✅ 任务标记为完成，记录完成时间:', new Date(updateData.completedTime).toLocaleString());
+            } else {
+                // 取消完成：清空完成时间
+                updateData.completedTime = null;
+                console.log('❌ 任务取消完成，清空完成时间');
             }
 
             // 调用API更新任务状态
@@ -867,6 +873,15 @@ class TaskManager {
             if (result.success) {
                 // 更新本地数据
                 task.completed = completed;
+
+                // 更新完成时间
+                if (completed) {
+                    task.completedTime = updateData.completedTime;
+                    task.完成时间 = updateData.completedTime; // 同时更新中文字段名
+                } else {
+                    task.completedTime = null;
+                    task.完成时间 = null;
+                }
 
                 // 重新渲染界面
                 this.renderTasks();
