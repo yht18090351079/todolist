@@ -176,6 +176,69 @@ class TaskManager {
         }, 5000);
     }
 
+    // 显示服务器错误帮助信息
+    showServerError(message) {
+        const helpModal = document.createElement('div');
+        helpModal.className = 'modal show';
+        helpModal.innerHTML = `
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>🔧 服务器连接问题</h2>
+                    <button class="modal-close" onclick="this.closest('.modal').remove()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div style="background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
+                        <h3 style="color: #721c24; margin-bottom: 0.5rem;">后端服务暂时不可用</h3>
+                        <p style="color: #721c24; margin: 0;">Netlify Functions 服务遇到问题，系统将使用本地备用数据。</p>
+                    </div>
+
+                    <h3>当前状态：</h3>
+                    <ul style="line-height: 1.8;">
+                        <li>✅ 可以查看任务（使用备用数据）</li>
+                        <li>❌ 无法保存新任务到飞书</li>
+                        <li>❌ 无法更新任务状态</li>
+                        <li>✅ 可以生成AI报告</li>
+                    </ul>
+
+                    <h3>解决方案：</h3>
+                    <ol style="line-height: 1.8;">
+                        <li><strong>激活CORS代理</strong>（推荐）：<br>
+                            <a href="https://cors-anywhere.herokuapp.com/corsdemo" target="_blank"
+                               style="color: #667eea; text-decoration: none; font-weight: 600;">
+                               点击这里激活CORS代理服务
+                            </a>
+                        </li>
+                        <li><strong>等待服务恢复</strong>：后端服务可能正在重启</li>
+                        <li><strong>联系管理员</strong>：如果问题持续存在</li>
+                    </ol>
+
+                    <div style="background: #d1ecf1; border: 1px solid #bee5eb; border-radius: 8px; padding: 1rem; margin-top: 1rem;">
+                        <h4 style="color: #0c5460; margin-bottom: 0.5rem;">💡 临时解决方案</h4>
+                        <p style="color: #0c5460; margin: 0;">激活CORS代理后，系统会自动切换到直连模式，可以正常保存和更新任务。</p>
+                    </div>
+
+                    <details style="margin-top: 1rem;">
+                        <summary style="cursor: pointer; font-weight: 600;">查看详细错误信息</summary>
+                        <pre style="background: #f8f9fa; padding: 1rem; border-radius: 4px; margin-top: 0.5rem; font-size: 0.875rem; overflow-x: auto;">${message}</pre>
+                    </details>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-primary" onclick="window.open('https://cors-anywhere.herokuapp.com/corsdemo', '_blank')">
+                        <i class="fas fa-external-link-alt"></i>
+                        激活CORS代理
+                    </button>
+                    <button class="btn btn-secondary" onclick="this.closest('.modal').remove()">
+                        我知道了
+                    </button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(helpModal);
+    }
+
     // 同步数据
     async syncData() {
         console.log('同步数据...');
@@ -758,8 +821,10 @@ class TaskManager {
     // 显示错误信息
     showError(message) {
         // 如果是CORS相关错误，显示特殊的帮助信息
-        if (message.includes('CORS') || message.includes('cors-anywhere')) {
+        if (message.includes('CORS') || message.includes('cors-anywhere') || message.includes('403') || message.includes('Forbidden')) {
             this.showCorsHelp(message);
+        } else if (message.includes('500') || message.includes('Internal Server Error')) {
+            this.showServerError(message);
         } else {
             alert(message);
         }
