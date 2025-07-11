@@ -32,64 +32,8 @@ class FeishuTaskAPI {
 
     // 获取访问令牌（代理模式下不需要前端获取）
     async getAccessToken() {
-        if (this.useProxy) {
-            // 代理模式下不需要前端获取令牌
-            return { success: true, token: 'proxy_mode' };
-        }
-
-        // 备用的直接模式（如果需要的话）
-        return this.getAccessTokenDirect();
-    }
-
-    // 直接获取访问令牌（备用方案）
-    async getAccessTokenDirect() {
-        try {
-            console.log('获取飞书访问令牌...');
-
-            // 使用CORS代理
-            const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
-            const targetUrl = 'https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal';
-
-            const response = await fetch(proxyUrl + targetUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: JSON.stringify({
-                    app_id: this.config.APP_ID,
-                    app_secret: this.config.APP_SECRET
-                })
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
-
-            const data = await response.json();
-
-            if (data.code === 0) {
-                console.log('✅ 访问令牌获取成功');
-                return { success: true, token: data.tenant_access_token };
-            } else {
-                throw new Error(`获取访问令牌失败: ${data.msg}`);
-            }
-        } catch (error) {
-            console.error('❌ 获取飞书访问令牌失败:', error);
-
-            if (error.message.includes('403') || error.message.includes('Forbidden')) {
-                const corsMessage = `CORS代理访问受限。请按以下步骤操作：
-
-1. 点击这个链接: https://cors-anywhere.herokuapp.com/corsdemo
-2. 点击 "Request temporary access to the demo server" 按钮
-3. 等待几秒钟后重新尝试同步数据
-
-这是因为CORS代理服务需要临时激活才能使用。`;
-                return { success: false, error: corsMessage };
-            }
-
-            return { success: false, error: error.message };
-        }
+        // 代理模式下不需要前端获取令牌
+        return { success: true, token: 'proxy_mode' };
     }
 
     // 解析飞书URL获取app_token
@@ -216,11 +160,7 @@ class FeishuTaskAPI {
     // 创建新任务
     async createTask(taskData) {
         try {
-            if (this.useProxy) {
-                return await this.createTaskViaProxy(taskData);
-            } else {
-                return await this.createTaskDirect(taskData);
-            }
+            return await this.createTaskViaProxy(taskData);
         } catch (error) {
             console.error('❌ 创建飞书任务失败:', error);
             return { success: false, error: error.message };
@@ -258,71 +198,12 @@ class FeishuTaskAPI {
         }
     }
 
-    // 直接创建任务（备用方案）
-    async createTaskDirect(taskData) {
-        try {
-            const tokenResult = await this.getAccessTokenDirect();
-            if (!tokenResult.success) {
-                return tokenResult;
-            }
 
-            const urlInfo = this.parseFeishuUrl(this.config.BASE_URL);
-            if (!urlInfo.success) {
-                return urlInfo;
-            }
-
-            console.log('直接创建新任务:', taskData);
-
-            // 准备数据映射
-            const fieldsData = {
-                '任务事项': taskData.title,
-                '所属项目': taskData.project,
-                '对接人': taskData.assignee || '',
-                '截止日期': taskData.dueDate || '',
-                '是否已完成': taskData.completed || false
-            };
-
-            const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
-            const targetUrl = `https://open.feishu.cn/open-apis/bitable/v1/apps/${urlInfo.appToken}/tables/${this.config.TABLE_ID}/records`;
-
-            const response = await fetch(proxyUrl + targetUrl, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${tokenResult.token}`,
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: JSON.stringify({
-                    records: [{ fields: fieldsData }]
-                })
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
-
-            const result = await response.json();
-
-            if (result.code === 0) {
-                console.log('✅ 任务创建成功');
-                return { success: true, data: result.data };
-            } else {
-                throw new Error(`创建任务失败: ${result.msg}`);
-            }
-        } catch (error) {
-            console.error('❌ 直接创建任务失败:', error);
-            return { success: false, error: error.message };
-        }
-    }
 
     // 更新任务
     async updateTask(taskId, taskData) {
         try {
-            if (this.useProxy) {
-                return await this.updateTaskViaProxy(taskId, taskData);
-            } else {
-                return await this.updateTaskDirect(taskId, taskData);
-            }
+            return await this.updateTaskViaProxy(taskId, taskData);
         } catch (error) {
             console.error('❌ 更新飞书任务失败:', error);
             return { success: false, error: error.message };
@@ -356,68 +237,11 @@ class FeishuTaskAPI {
             }
         } catch (error) {
             console.error('❌ 代理更新任务失败:', error);
-            // 如果代理失败，尝试直接模式
-            console.log('尝试切换到直接模式...');
-            this.useProxy = false;
-            return await this.updateTaskDirect(taskId, taskData);
+            return { success: false, error: `后端服务不可用: ${error.message}` };
         }
     }
 
-    // 直接更新任务（备用方案）
-    async updateTaskDirect(taskId, taskData) {
-        try {
-            const tokenResult = await this.getAccessTokenDirect();
-            if (!tokenResult.success) {
-                return tokenResult;
-            }
 
-            const urlInfo = this.parseFeishuUrl(this.config.BASE_URL);
-            if (!urlInfo.success) {
-                return urlInfo;
-            }
-
-            console.log('直接更新任务:', taskId, taskData);
-
-            // 准备数据映射
-            const fieldsData = {};
-            if (taskData.title !== undefined) fieldsData['任务事项'] = taskData.title;
-            if (taskData.project !== undefined) fieldsData['所属项目'] = taskData.project;
-            if (taskData.assignee !== undefined) fieldsData['对接人'] = taskData.assignee;
-            if (taskData.dueDate !== undefined) fieldsData['截止日期'] = taskData.dueDate;
-            if (taskData.completed !== undefined) fieldsData['是否已完成'] = taskData.completed;
-
-            const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
-            const targetUrl = `https://open.feishu.cn/open-apis/bitable/v1/apps/${urlInfo.appToken}/tables/${this.config.TABLE_ID}/records/${taskId}`;
-
-            const response = await fetch(proxyUrl + targetUrl, {
-                method: 'PUT',
-                headers: {
-                    'Authorization': `Bearer ${tokenResult.token}`,
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: JSON.stringify({
-                    fields: fieldsData
-                })
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
-
-            const result = await response.json();
-
-            if (result.code === 0) {
-                console.log('✅ 任务更新成功');
-                return { success: true, data: result.data };
-            } else {
-                throw new Error(`更新任务失败: ${result.msg}`);
-            }
-        } catch (error) {
-            console.error('❌ 直接更新任务失败:', error);
-            return { success: false, error: error.message };
-        }
-    }
 
     // 健康检查
     async checkHealth() {

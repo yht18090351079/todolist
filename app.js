@@ -874,71 +874,51 @@ class TaskManager {
 
     // 显示错误信息
     showError(message) {
-        // 如果是CORS相关错误，显示特殊的帮助信息
-        if (message.includes('CORS') || message.includes('cors-anywhere') || message.includes('403') || message.includes('Forbidden')) {
-            this.showCorsHelp(message);
-        } else if (message.includes('500') || message.includes('Internal Server Error')) {
+        // 如果是后端服务不可用，显示特殊的帮助信息
+        if (message.includes('500') || message.includes('Internal Server Error') || message.includes('后端服务不可用')) {
             this.showServerError(message);
         } else {
-            alert(message);
+            // 其他错误使用简单提示
+            this.showSimpleError(message);
         }
     }
 
-    // 显示CORS帮助信息
-    showCorsHelp(message) {
-        const helpModal = document.createElement('div');
-        helpModal.className = 'modal show';
-        helpModal.innerHTML = `
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2>🔧 需要激活CORS代理服务</h2>
-                    <button class="modal-close" onclick="this.closest('.modal').remove()">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
-                        <h3 style="color: #856404; margin-bottom: 0.5rem;">为什么会出现这个问题？</h3>
-                        <p style="color: #856404; margin: 0;">由于浏览器的安全策略，网页无法直接访问飞书API。我们使用CORS代理服务来解决这个问题，但该服务需要临时激活。</p>
-                    </div>
-
-                    <h3>请按以下步骤操作：</h3>
-                    <ol style="line-height: 1.8;">
-                        <li><strong>点击下面的链接</strong>（会在新窗口打开）：<br>
-                            <a href="https://cors-anywhere.herokuapp.com/corsdemo" target="_blank"
-                               style="color: #667eea; text-decoration: none; font-weight: 600;">
-                               https://cors-anywhere.herokuapp.com/corsdemo
-                            </a>
-                        </li>
-                        <li><strong>点击页面上的按钮</strong>："Request temporary access to the demo server"</li>
-                        <li><strong>等待几秒钟</strong>，然后回到本页面</li>
-                        <li><strong>点击"同步数据"按钮</strong>重新尝试</li>
-                    </ol>
-
-                    <div style="background: #d1ecf1; border: 1px solid #bee5eb; border-radius: 8px; padding: 1rem; margin-top: 1rem;">
-                        <h4 style="color: #0c5460; margin-bottom: 0.5rem;">💡 小贴士</h4>
-                        <p style="color: #0c5460; margin: 0;">这个激活只需要做一次，之后就可以正常使用了。如果过一段时间又出现同样问题，重复上述步骤即可。</p>
-                    </div>
-
-                    <details style="margin-top: 1rem;">
-                        <summary style="cursor: pointer; font-weight: 600;">查看详细错误信息</summary>
-                        <pre style="background: #f8f9fa; padding: 1rem; border-radius: 4px; margin-top: 0.5rem; font-size: 0.875rem; overflow-x: auto;">${message}</pre>
-                    </details>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-primary" onclick="window.open('https://cors-anywhere.herokuapp.com/corsdemo', '_blank')">
-                        <i class="fas fa-external-link-alt"></i>
-                        打开激活页面
-                    </button>
-                    <button class="btn btn-secondary" onclick="this.closest('.modal').remove()">
-                        我知道了
-                    </button>
-                </div>
-            </div>
+    // 显示简单错误提示
+    showSimpleError(message) {
+        // 创建简单的错误提示条
+        const errorBar = document.createElement('div');
+        errorBar.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: #f56565;
+            color: white;
+            padding: 1rem;
+            text-align: center;
+            z-index: 1000;
+            font-size: 0.875rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        `;
+        errorBar.innerHTML = `
+            <i class="fas fa-exclamation-triangle"></i>
+            ${message}
+            <button onclick="this.parentElement.remove()" style="float: right; background: none; border: none; color: white; cursor: pointer; font-size: 1.2rem;">
+                <i class="fas fa-times"></i>
+            </button>
         `;
 
-        document.body.appendChild(helpModal);
+        document.body.insertBefore(errorBar, document.body.firstChild);
+
+        // 5秒后自动隐藏
+        setTimeout(() => {
+            if (errorBar.parentElement) {
+                errorBar.remove();
+            }
+        }, 5000);
     }
+
+
 }
 
 // 页面加载完成后初始化应用
