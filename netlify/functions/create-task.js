@@ -70,13 +70,19 @@ async function createTask(accessToken, taskData) {
     return new Promise((resolve, reject) => {
         const appToken = parseFeishuUrl(FEISHU_CONFIG.BASE_URL);
         
-        // 准备数据映射
+        // 验证必填字段
+        if (!taskData.title || !taskData.project) {
+            throw new Error('任务事项和所属项目为必填字段');
+        }
+
+        // 准备数据映射 - 确保包含所有必要字段
         const fieldsData = {
             '任务事项': taskData.title,
             '所属项目': taskData.project,
             '对接人': taskData.assignee || '',
             '是否已完成': taskData.completed || false,
-            '创建时间': Date.now() // 添加创建时间字段
+            '创建时间': Date.now(),
+            '完成时间': null // 新任务默认未完成
         };
 
         // 处理截止日期字段 - 只有当日期不为空时才设置
@@ -90,6 +96,8 @@ async function createTask(accessToken, taskData) {
                 console.warn('日期格式转换失败:', taskData.dueDate, error);
             }
         }
+
+        console.log('准备创建的字段数据:', fieldsData);
 
         const postData = JSON.stringify({
             records: [{ fields: fieldsData }]
