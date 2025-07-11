@@ -1130,31 +1130,57 @@ class TaskManager {
             let filteredTasks;
             let result;
 
+            // 显示报告内容区域并准备流式输出
+            document.getElementById('reportContent').style.display = 'block';
+            document.getElementById('copyReportBtn').style.display = 'inline-flex';
+            const reportTextElement = document.getElementById('reportText');
+            reportTextElement.textContent = '';
+            reportTextElement.classList.add('typing');
+            reportTextElement.innerHTML = '<span style="color: #4299e1;">🤖 AI正在生成报告...</span>';
+
+            // 流式输出回调函数
+            const onProgress = (content) => {
+                reportTextElement.textContent = content;
+                reportTextElement.scrollTop = reportTextElement.scrollHeight;
+            };
+
             if (reportType === 'daily') {
                 // 筛选当天完成的任务
                 filteredTasks = this.getCompletedTasksByDate(reportDate);
                 console.log(`📅 ${reportDate} 完成的任务:`, filteredTasks);
-                result = await window.doubaoAPI.generateDailyReport(filteredTasks, reportDate, reportProject);
+                result = await window.doubaoAPI.generateDailyReport(filteredTasks, reportDate, reportProject, onProgress);
             } else if (reportType === 'weekly') {
                 // 筛选该周完成的任务
                 filteredTasks = this.getCompletedTasksByWeek(reportDate);
                 console.log(`📊 ${reportDate} 这周完成的任务:`, filteredTasks);
-                result = await window.doubaoAPI.generateWeeklyReport(filteredTasks, reportDate, reportProject);
+                result = await window.doubaoAPI.generateWeeklyReport(filteredTasks, reportDate, reportProject, onProgress);
             } else {
                 // 通用报告使用所有任务
                 filteredTasks = this.tasks;
-                result = await window.doubaoAPI.generateGeneralReport(filteredTasks, reportDate, reportProject);
+                result = await window.doubaoAPI.generateGeneralReport(filteredTasks, reportDate, reportProject, onProgress);
             }
 
             if (result.success) {
                 console.log('✅ 报告生成成功');
 
-                // 显示报告内容区域
-                document.getElementById('reportContent').style.display = 'block';
-                document.getElementById('copyReportBtn').style.display = 'inline-flex';
+                // 移除打字动画
+                reportTextElement.classList.remove('typing');
 
-                // 流式显示报告内容
-                this.displayReportWithTypewriter(result.report);
+                // 添加完成提示
+                setTimeout(() => {
+                    const completeIndicator = document.createElement('div');
+                    completeIndicator.style.cssText = `
+                        margin-top: 1rem;
+                        padding: 0.5rem;
+                        background: #e6fffa;
+                        border-left: 3px solid #38b2ac;
+                        border-radius: 4px;
+                        font-size: 0.875rem;
+                        color: #2d3748;
+                    `;
+                    completeIndicator.innerHTML = '✅ 报告生成完成';
+                    reportTextElement.appendChild(completeIndicator);
+                }, 200);
 
                 // 显示筛选的任务数量
                 const taskCount = filteredTasks.length;
@@ -1162,7 +1188,8 @@ class TaskManager {
                 console.log(`📋 报告基于 ${taskCount} 个任务，其中 ${completedCount} 个已完成`);
             } else {
                 console.error('❌ 报告生成失败:', result.error);
-                alert('生成报告失败: ' + result.error);
+                reportTextElement.classList.remove('typing');
+                reportTextElement.innerHTML = `<span style="color: #e53e3e;">❌ 报告生成失败: ${result.error}</span>`;
             }
         } catch (error) {
             console.error('❌ 报告生成异常:', error);

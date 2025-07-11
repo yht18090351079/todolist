@@ -19,6 +19,59 @@ class DoubaoAPI {
         }
     }
 
+    // 流式生成文本
+    async generateTextStream(messages, onProgress) {
+        try {
+            const proxyUrl = this.getProxyUrl();
+
+            console.log('开始流式输出...');
+
+            // 使用流式输出端点
+            const response = await fetch(`${proxyUrl}/doubao-stream`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    messages: messages
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`流式请求失败: ${response.status}`);
+            }
+
+            // 读取响应体
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let fullContent = '';
+
+            // 模拟流式输出效果
+            const content = await response.text();
+
+            // 逐字符显示，创建流式效果
+            for (let i = 0; i < content.length; i++) {
+                fullContent += content[i];
+
+                // 每几个字符调用一次进度回调
+                if (i % 3 === 0 || i === content.length - 1) {
+                    onProgress(fullContent);
+                    // 添加小延迟创建打字效果
+                    await new Promise(resolve => setTimeout(resolve, 20));
+                }
+            }
+
+            return {
+                success: true,
+                content: fullContent
+            };
+
+        } catch (error) {
+            console.error('流式输出失败:', error);
+            throw error;
+        }
+    }
+
     // 生成降级内容（当API超时时使用）
     generateFallbackContent(messages) {
         const userMessage = messages[messages.length - 1]?.content || '';
@@ -78,17 +131,21 @@ class DoubaoAPI {
         };
     }
 
-    // 调用豆包API生成文本
-    async generateText(messages) {
+    // 调用豆包API生成文本（流式输出）
+    async generateText(messages, onProgress = null) {
         try {
-            console.log('调用豆包API生成文本...');
+            console.log('调用豆包API生成文本（流式输出）...');
 
-            // 使用代理服务器调用豆包API，添加超时控制
             const proxyUrl = this.getProxyUrl();
 
-            // 创建超时控制
+            // 如果提供了进度回调，使用流式输出
+            if (onProgress && typeof onProgress === 'function') {
+                return await this.generateTextStream(messages, onProgress);
+            }
+
+            // 否则使用标准模式
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 25000); // 25秒超时
+            const timeoutId = setTimeout(() => controller.abort(), 25000);
 
             const response = await fetch(`${proxyUrl}/doubao-chat`, {
                 method: 'POST',
@@ -135,8 +192,8 @@ class DoubaoAPI {
         }
     }
 
-    // 生成日报
-    async generateDailyReport(tasks, date, projectFilter = '') {
+    // 生成日报（支持流式输出）
+    async generateDailyReport(tasks, date, projectFilter = '', onProgress = null) {
         try {
             console.log('生成日报...', { date, projectFilter, tasksCount: tasks.length });
 
@@ -189,7 +246,7 @@ ${urgentTasks.map(task => `- ${task.title} (${task.project}) - 负责人: ${task
                 }
             ];
 
-            const result = await this.generateText(messages);
+            const result = await this.generateText(messages, onProgress);
             
             if (result.success) {
                 console.log('✅ 日报生成成功');

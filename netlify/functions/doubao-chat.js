@@ -90,9 +90,9 @@ function callDoubaoAPI(messages) {
         const postData = JSON.stringify({
             model: DOUBAO_CONFIG.MODEL,
             messages: messages,
-            max_tokens: 1000,  // 减少token数量，避免超时
+            max_tokens: 1500,
             temperature: 0.7,
-            stream: false  // 暂时禁用流式输出，避免超时问题
+            stream: true  // 重新启用流式输出
         });
 
         const url = new URL(DOUBAO_CONFIG.API_URL);
