@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>调试测试</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 8px; }
+        .success { background: #e8f5e8; border-color: #4caf50; }
+        .error { background: #ffebee; border-color: #f44336; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>🔧 调试测试页面</h1>
+    
+    <div class="test">
+        <h3>1. 配置检查</h3>
+        <button onclick="checkConfig()">检查配置</button>
+        <div id="configResult"></div>
+    </div>
+
+    <div class="test">
+        <h3>2. FeishuAPI初始化测试</h3>
+        <button onclick="testFeishuInit()">测试FeishuAPI初始化</button>
+        <div id="feishuInitResult"></div>
+    </div>
+
+    <div class="test">
+        <h3>3. TaskManager初始化测试</h3>
+        <button onclick="testTaskManagerInit()">测试TaskManager初始化</button>
+        <div id="taskManagerResult"></div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/feishu-api.js"></script>
+    <script src="js/app.js"></script>
+    
+    <script>
+        function checkConfig() {
+            const result = document.getElementById('configResult');
+            try {
+                console.log('CONFIG对象:', CONFIG);
+                
+                const checks = [
+                    { name: 'CONFIG存在', value: typeof CONFIG !== 'undefined' },
+                    { name: 'FEISHU配置存在', value: CONFIG.FEISHU !== undefined },
+                    { name: 'TOKEN_URL存在', value: CONFIG.FEISHU.TOKEN_URL !== undefined },
+                    { name: 'API_URL存在', value: CONFIG.FEISHU.API_URL !== undefined },
+                    { name: 'APP_ID存在', value: CONFIG.FEISHU.APP_ID !== undefined },
+                    { name: 'APP_SECRET存在', value: CONFIG.FEISHU.APP_SECRET !== undefined },
+                    { name: 'BITABLE_ID存在', value: CONFIG.FEISHU.BITABLE_ID !== undefined },
+                    { name: 'TABLE_ID存在', value: CONFIG.FEISHU.TABLE_ID !== undefined },
+                    { name: 'DOUBAO配置存在', value: CONFIG.DOUBAO !== undefined }
+                ];
+
+                let html = '<ul>';
+                let allPassed = true;
+                
+                checks.forEach(check => {
+                    const status = check.value ? '✅' : '❌';
+                    html += `<li>${status} ${check.name}: ${check.value}</li>`;
+                    if (!check.value) allPassed = false;
+                });
+                
+                html += '</ul>';
+                html += `<p><strong>当前环境:</strong> ${window.location.hostname}</p>`;
+                html += `<p><strong>TOKEN_URL:</strong> ${CONFIG.FEISHU.TOKEN_URL}</p>`;
+                html += `<p><strong>API_URL:</strong> ${CONFIG.FEISHU.API_URL}</p>`;
+                
+                result.innerHTML = html;
+                result.parentElement.className = allPassed ? 'test success' : 'test error';
+                
+            } catch (error) {
+                result.innerHTML = `❌ 配置检查失败: ${error.message}`;
+                result.parentElement.className = 'test error';
+            }
+        }
+
+        function testFeishuInit() {
+            const result = document.getElementById('feishuInitResult');
+            try {
+                const feishuAPI = new FeishuAPI();
+                result.innerHTML = `✅ FeishuAPI初始化成功<br>isNetlify: ${feishuAPI.isNetlify}`;
+                result.parentElement.className = 'test success';
+            } catch (error) {
+                result.innerHTML = `❌ FeishuAPI初始化失败: ${error.message}<br>堆栈: ${error.stack}`;
+                result.parentElement.className = 'test error';
+            }
+        }
+
+        function testTaskManagerInit() {
+            const result = document.getElementById('taskManagerResult');
+            try {
+                const taskManager = new TaskManager();
+                result.innerHTML = `✅ TaskManager初始化成功`;
+                result.parentElement.className = 'test success';
+            } catch (error) {
+                result.innerHTML = `❌ TaskManager初始化失败: ${error.message}<br>堆栈: ${error.stack}`;
+                result.parentElement.className = 'test error';
+            }
+        }
+
+        // 页面加载时自动检查配置
+        window.addEventListener('load', () => {
+            checkConfig();
+        });
+    </script>
+</body>
+</html>
