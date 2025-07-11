@@ -75,15 +75,22 @@ async function createTask(accessToken, taskData) {
             throw new Error('任务事项和所属项目为必填字段');
         }
 
-        // 准备数据映射 - 确保包含所有必要字段
-        const fieldsData = {
-            '任务事项': taskData.title,
-            '所属项目': taskData.project,
-            '对接人': taskData.assignee || '',
-            '是否已完成': taskData.completed || false,
-            '创建时间': Date.now(),
-            '完成时间': null // 新任务默认未完成
-        };
+        // 准备数据映射 - 采用与update-task相同的模式
+        const fieldsData = {};
+
+        // 必填字段
+        fieldsData['任务事项'] = taskData.title;
+        fieldsData['所属项目'] = taskData.project;
+        fieldsData['创建时间'] = Date.now();
+
+        // 可选字段 - 只有当有值时才设置
+        if (taskData.assignee) {
+            fieldsData['对接人'] = taskData.assignee;
+        }
+
+        if (taskData.completed !== undefined) {
+            fieldsData['是否已完成'] = taskData.completed;
+        }
 
         // 处理截止日期字段 - 只有当日期不为空时才设置
         if (taskData.dueDate && taskData.dueDate !== '') {
