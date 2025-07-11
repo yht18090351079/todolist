@@ -1,9 +1,12 @@
 [build]
   # 发布目录
   publish = "."
-  
+
   # 构建命令（静态站点不需要构建）
   command = "echo 'Static site, no build needed'"
+
+  # Functions目录
+  functions = "netlify/functions"
 
 [build.environment]
   # 环境变量
