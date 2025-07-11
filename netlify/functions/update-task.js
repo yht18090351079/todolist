@@ -77,6 +77,11 @@ async function updateTask(accessToken, taskId, taskData) {
 
         if (taskData.completed !== undefined) fieldsData['是否已完成'] = taskData.completed;
 
+        // 处理完成时间字段
+        if (taskData.completedTime !== undefined) {
+            fieldsData['完成时间'] = taskData.completedTime;
+        }
+
         const putData = JSON.stringify({ fields: fieldsData });
         
         const options = {

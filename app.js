@@ -42,6 +42,12 @@ class TaskManager {
         
         // 生成报告按钮
         document.getElementById('reportBtn').addEventListener('click', () => this.showReportModal());
+
+        // 日报按钮
+        document.getElementById('dailyReportBtn').addEventListener('click', () => this.showReportModal('daily'));
+
+        // 周报按钮
+        document.getElementById('weeklyReportBtn').addEventListener('click', () => this.showReportModal('weekly'));
         
         // 新增任务按钮
         document.getElementById('addTaskBtn').addEventListener('click', () => this.showTaskModal());
@@ -1061,10 +1067,30 @@ class TaskManager {
     }
 
     // 显示报告模态框
-    showReportModal() {
+    showReportModal(reportType = 'general') {
         document.getElementById('reportModal').classList.add('show');
         document.getElementById('reportContent').style.display = 'none';
         document.getElementById('copyReportBtn').style.display = 'none';
+
+        // 根据报告类型设置默认值
+        const reportTypeSelect = document.getElementById('reportType');
+        const reportDateInput = document.getElementById('reportDate');
+
+        if (reportType === 'daily') {
+            reportTypeSelect.value = 'daily';
+            // 设置为今天
+            reportDateInput.value = new Date().toISOString().split('T')[0];
+        } else if (reportType === 'weekly') {
+            reportTypeSelect.value = 'weekly';
+            // 设置为本周一
+            const today = new Date();
+            const monday = new Date(today);
+            monday.setDate(today.getDate() - today.getDay() + 1);
+            reportDateInput.value = monday.toISOString().split('T')[0];
+        } else {
+            reportTypeSelect.value = 'general';
+            reportDateInput.value = new Date().toISOString().split('T')[0];
+        }
     }
 
     // 隐藏报告模态框
@@ -1077,28 +1103,44 @@ class TaskManager {
         const reportType = document.querySelector('input[name="reportType"]:checked').value;
         const reportDate = document.getElementById('reportDate').value;
         const reportProject = document.getElementById('reportProject').value;
-        
+
         if (!reportDate) {
             alert('请选择报告日期');
             return;
         }
-        
+
         this.showLoading(true);
-        
+
         try {
+            let filteredTasks;
             let result;
-            
+
             if (reportType === 'daily') {
-                result = await window.doubaoAPI.generateDailyReport(this.tasks, reportDate, reportProject);
+                // 筛选当天完成的任务
+                filteredTasks = this.getCompletedTasksByDate(reportDate);
+                console.log(`📅 ${reportDate} 完成的任务:`, filteredTasks);
+                result = await window.doubaoAPI.generateDailyReport(filteredTasks, reportDate, reportProject);
+            } else if (reportType === 'weekly') {
+                // 筛选该周完成的任务
+                filteredTasks = this.getCompletedTasksByWeek(reportDate);
+                console.log(`📊 ${reportDate} 这周完成的任务:`, filteredTasks);
+                result = await window.doubaoAPI.generateWeeklyReport(filteredTasks, reportDate, reportProject);
             } else {
-                result = await window.doubaoAPI.generateWeeklyReport(this.tasks, reportDate, reportProject);
+                // 通用报告使用所有任务
+                filteredTasks = this.tasks;
+                result = await window.doubaoAPI.generateGeneralReport(filteredTasks, reportDate, reportProject);
             }
-            
+
             if (result.success) {
                 console.log('✅ 报告生成成功');
                 document.getElementById('reportText').textContent = result.report;
                 document.getElementById('reportContent').style.display = 'block';
                 document.getElementById('copyReportBtn').style.display = 'inline-flex';
+
+                // 显示筛选的任务数量
+                const taskCount = filteredTasks.length;
+                const completedCount = filteredTasks.filter(t => t.completed).length;
+                console.log(`📋 报告基于 ${taskCount} 个任务，其中 ${completedCount} 个已完成`);
             } else {
                 console.error('❌ 报告生成失败:', result.error);
                 alert('生成报告失败: ' + result.error);
@@ -1109,6 +1151,49 @@ class TaskManager {
         } finally {
             this.showLoading(false);
         }
+    }
+
+    // 获取指定日期完成的任务
+    getCompletedTasksByDate(dateString) {
+        const targetDate = new Date(dateString);
+        const startOfDay = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
+        const endOfDay = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate() + 1);
+
+        return this.tasks.filter(task => {
+            if (!task.completed || !task.completedTime) {
+                return false;
+            }
+
+            const completedDate = new Date(task.completedTime);
+            return completedDate >= startOfDay && completedDate < endOfDay;
+        });
+    }
+
+    // 获取指定周完成的任务
+    getCompletedTasksByWeek(dateString) {
+        const targetDate = new Date(dateString);
+
+        // 计算该周的开始和结束时间（周一到周日）
+        const dayOfWeek = targetDate.getDay();
+        const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // 如果是周日，往前推6天到周一
+
+        const startOfWeek = new Date(targetDate);
+        startOfWeek.setDate(targetDate.getDate() + mondayOffset);
+        startOfWeek.setHours(0, 0, 0, 0);
+
+        const endOfWeek = new Date(startOfWeek);
+        endOfWeek.setDate(startOfWeek.getDate() + 7);
+
+        console.log(`📅 周报时间范围: ${startOfWeek.toLocaleDateString()} - ${endOfWeek.toLocaleDateString()}`);
+
+        return this.tasks.filter(task => {
+            if (!task.completed || !task.completedTime) {
+                return false;
+            }
+
+            const completedDate = new Date(task.completedTime);
+            return completedDate >= startOfWeek && completedDate < endOfWeek;
+        });
     }
 
     // 复制报告
