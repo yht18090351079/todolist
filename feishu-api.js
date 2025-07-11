@@ -156,6 +156,16 @@ class FeishuTaskAPI {
             const fallbackTasks = [
                 {
                     id: 'local_1',
+                    title: '跟进客户反馈意见',
+                    project: '新疆电网二期',
+                    assignee: '袁昊天',
+                    dueDate: '2024-12-08',
+                    createTime: '2024-12-01',
+                    completed: false,
+                    daysToDeadline: 4
+                },
+                {
+                    id: 'local_2',
                     title: '准备下一季度销售计划',
                     project: '地灾预警',
                     assignee: '张三',
@@ -165,7 +175,7 @@ class FeishuTaskAPI {
                     daysToDeadline: 6
                 },
                 {
-                    id: 'local_2',
+                    id: 'local_3',
                     title: '组织员工培训',
                     project: '地灾预警',
                     assignee: '李四',
@@ -175,7 +185,7 @@ class FeishuTaskAPI {
                     daysToDeadline: 11
                 },
                 {
-                    id: 'local_3',
+                    id: 'local_4',
                     title: '完成系统测试',
                     project: '新建电网二期',
                     assignee: '王五',
@@ -183,6 +193,16 @@ class FeishuTaskAPI {
                     createTime: '2024-12-02',
                     completed: false,
                     daysToDeadline: 4
+                },
+                {
+                    id: 'local_5',
+                    title: '项目验收准备',
+                    project: '地灾预警',
+                    assignee: '赵六',
+                    dueDate: '2024-12-20',
+                    createTime: '2024-12-03',
+                    completed: false,
+                    daysToDeadline: 16
                 }
             ];
 
@@ -191,99 +211,7 @@ class FeishuTaskAPI {
         }
     }
 
-    // 直接获取任务（备用方案）
-    async getTasksDirect() {
-        try {
-            const tokenResult = await this.getAccessTokenDirect();
-            if (!tokenResult.success) {
-                return tokenResult;
-            }
 
-            const urlInfo = this.parseFeishuUrl(this.config.BASE_URL);
-            if (!urlInfo.success) {
-                return urlInfo;
-            }
-
-            const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
-            const targetUrl = `https://open.feishu.cn/open-apis/bitable/v1/apps/${urlInfo.appToken}/tables/${this.config.TABLE_ID}/records`;
-
-            const response = await fetch(proxyUrl + targetUrl, {
-                headers: {
-                    'Authorization': `Bearer ${tokenResult.token}`,
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
-
-            const data = await response.json();
-
-            if (data.code === 0) {
-                console.log('✅ 获取任务记录成功，共', data.data.items.length, '条');
-
-                // 转换数据格式以匹配前端需求
-                const tasks = data.data.items.map(record => {
-                    const fields = record.fields;
-                    return {
-                        id: record.record_id,
-                        title: fields['任务事项'] || '',
-                        project: fields['所属项目'] || '',
-                        assignee: fields['对接人'] || '',
-                        dueDate: fields['截止日期'] || '',
-                        createTime: fields['创建时间'] || '',
-                        completed: fields['是否已完成'] || false,
-                        daysToDeadline: fields['距离截止日'] || 0
-                    };
-                });
-
-                return { success: true, tasks: tasks };
-            } else {
-                throw new Error(`获取任务记录失败: ${data.msg}`);
-            }
-        } catch (error) {
-            console.error('❌ 直接获取任务失败:', error);
-
-            // 如果直接模式也失败，返回本地备用数据
-            console.log('直接模式失败，使用本地备用数据...');
-            const fallbackTasks = [
-                {
-                    id: 'direct_1',
-                    title: '准备下一季度销售计划',
-                    project: '地灾预警',
-                    assignee: '张三',
-                    dueDate: '2024-12-10',
-                    createTime: '2024-12-01',
-                    completed: false,
-                    daysToDeadline: 6
-                },
-                {
-                    id: 'direct_2',
-                    title: '组织员工培训',
-                    project: '地灾预警',
-                    assignee: '李四',
-                    dueDate: '2024-12-15',
-                    createTime: '2024-12-01',
-                    completed: true,
-                    daysToDeadline: 11
-                },
-                {
-                    id: 'direct_3',
-                    title: '完成系统测试',
-                    project: '新建电网二期',
-                    assignee: '王五',
-                    dueDate: '2024-12-08',
-                    createTime: '2024-12-02',
-                    completed: false,
-                    daysToDeadline: 4
-                }
-            ];
-
-            return { success: true, tasks: fallbackTasks, source: 'direct_fallback', error: error.message };
-        }
-    }
 
     // 创建新任务
     async createTask(taskData) {
@@ -326,10 +254,7 @@ class FeishuTaskAPI {
             }
         } catch (error) {
             console.error('❌ 代理创建任务失败:', error);
-            // 如果代理失败，尝试直接模式
-            console.log('尝试切换到直接模式...');
-            this.useProxy = false;
-            return await this.createTaskDirect(taskData);
+            return { success: false, error: `后端服务不可用: ${error.message}` };
         }
     }
 
