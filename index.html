@@ -4,438 +4,220 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>项目任务管理系统</title>
-    <style>
-        :root {
-            --primary-color: #007bff;
-            --success-color: #28a745;
-            --danger-color: #dc3545;
-            --warning-color: #ffc107;
-            --info-color: #17a2b8;
-            --light-color: #f8f9fa;
-            --dark-color: #343a40;
-        }
-        
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif; 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-        }
-        
-        .container { 
-            max-width: 1200px; 
-            margin: 0 auto; 
-        }
-        
-        .header { 
-            background: white; 
-            padding: 30px; 
-            border-radius: 12px; 
-            margin-bottom: 20px; 
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-            text-align: center;
-        }
-        
-        .header h1 {
-            color: var(--dark-color);
-            margin-bottom: 10px;
-            font-size: 2.5em;
-            font-weight: 600;
-        }
-        
-        .header p {
-            color: #666;
-            font-size: 1.1em;
-        }
-        
-        .project-tabs { 
-            display: flex; 
-            gap: 10px; 
-            margin-bottom: 20px; 
-            flex-wrap: wrap;
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-        }
-        
-        .tab { 
-            padding: 12px 24px; 
-            background: var(--light-color); 
-            border: 2px solid transparent; 
-            border-radius: 8px; 
-            cursor: pointer; 
-            transition: all 0.3s ease;
-            font-weight: 500;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .tab::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-            transition: left 0.5s;
-        }
-        
-        .tab:hover::before {
-            left: 100%;
-        }
-        
-        .tab:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        }
-        
-        .tab.active { 
-            background: var(--primary-color); 
-            color: white; 
-            border-color: var(--primary-color);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,123,255,0.3);
-        }
-        
-        .main-content {
-            background: white;
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-        }
-        
-        .action-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        
-        .add-task-btn { 
-            background: linear-gradient(45deg, var(--success-color), #20c997); 
-            color: white; 
-            border: none; 
-            padding: 12px 24px; 
-            border-radius: 8px; 
-            cursor: pointer; 
-            font-weight: 500;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 8px rgba(40,167,69,0.3);
-        }
-        
-        .add-task-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(40,167,69,0.4);
-        }
-        
-        .search-box {
-            padding: 10px 15px;
-            border: 2px solid #e9ecef;
-            border-radius: 8px;
-            font-size: 14px;
-            transition: border-color 0.3s ease;
-            min-width: 200px;
-        }
-        
-        .search-box:focus {
-            outline: none;
-            border-color: var(--primary-color);
-        }
-        
-        .tasks-container { 
-            min-height: 200px;
-        }
-        
-        .task-item { 
-            padding: 20px; 
-            border: 1px solid #e9ecef; 
-            border-radius: 10px; 
-            margin-bottom: 15px; 
-            background: white;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .task-item::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 4px;
-            height: 100%;
-            background: var(--primary-color);
-            transform: scaleY(0);
-            transition: transform 0.3s ease;
-        }
-        
-        .task-item:hover::before {
-            transform: scaleY(1);
-        }
-        
-        .task-item:hover {
-            transform: translateX(8px);
-            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
-        }
-        
-        .task-title { 
-            font-weight: 600; 
-            margin-bottom: 8px; 
-            font-size: 1.1em;
-            color: var(--dark-color);
-        }
-        
-        .task-meta { 
-            font-size: 13px; 
-            color: #666; 
-            margin-bottom: 10px;
-        }
-        
-        .task-status {
-            display: inline-block;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: 500;
-            margin-right: 8px;
-        }
-        
-        .status-pending { background: #fff3cd; color: #856404; }
-        .status-in-progress { background: #d1ecf1; color: #0c5460; }
-        .status-completed { background: #d4edda; color: #155724; }
-        .status-paused { background: #f8d7da; color: #721c24; }
-        
-        .priority-high { border-left: 4px solid var(--danger-color); }
-        .priority-medium { border-left: 4px solid var(--warning-color); }
-        .priority-low { border-left: 4px solid var(--success-color); }
-        
-        .task-actions {
-            margin-top: 15px;
-            display: flex;
-            gap: 8px;
-        }
-        
-        .btn {
-            border: none;
-            padding: 8px 16px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 12px;
-            font-weight: 500;
-            transition: all 0.3s ease;
-        }
-        
-        .btn-primary { background: var(--primary-color); color: white; }
-        .btn-danger { background: var(--danger-color); color: white; }
-        .btn-success { background: var(--success-color); color: white; }
-        
-        .btn:hover {
-            transform: translateY(-1px);
-            filter: brightness(110%);
-        }
-        
-        .loading { 
-            text-align: center; 
-            padding: 40px; 
-            color: #666;
-            font-style: italic;
-        }
-        
-        .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid var(--primary-color);
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        .report-section { 
-            background: white;
-            padding: 25px; 
-            border-radius: 12px; 
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-        }
-        
-        .report-section h3 {
-            margin-bottom: 20px;
-            color: var(--dark-color);
-            font-size: 1.3em;
-        }
-        
-        .report-btn { 
-            background: linear-gradient(45deg, var(--info-color), #20c997); 
-            color: white; 
-            border: none; 
-            padding: 12px 20px; 
-            border-radius: 8px; 
-            cursor: pointer; 
-            margin-right: 10px;
-            margin-bottom: 10px;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 8px rgba(23,162,184,0.3);
-        }
-        
-        .report-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(23,162,184,0.4);
-        }
-        
-        .report-content {
-            margin-top: 20px;
-            padding: 20px;
-            background: var(--light-color);
-            border-radius: 8px;
-            border: 1px solid #e9ecef;
-            display: none;
-            max-height: 400px;
-            overflow-y: auto;
-        }
-        
-        .error-message {
-            color: var(--danger-color);
-            text-align: center;
-            padding: 20px;
-            background: #f8d7da;
-            border: 1px solid #f5c6cb;
-            border-radius: 8px;
-            margin: 20px 0;
-        }
-        
-        .stats-bar {
-            display: flex;
-            gap: 20px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-        
-        .stat-item {
-            background: var(--light-color);
-            padding: 15px;
-            border-radius: 8px;
-            text-align: center;
-            flex: 1;
-            min-width: 120px;
-        }
-        
-        .stat-number {
-            font-size: 2em;
-            font-weight: bold;
-            color: var(--primary-color);
-        }
-        
-        .stat-label {
-            font-size: 0.9em;
-            color: #666;
-            margin-top: 5px;
-        }
-        
-        @media (max-width: 768px) {
-            .container {
-                padding: 10px;
-            }
-            
-            .header h1 {
-                font-size: 2em;
-            }
-            
-            .project-tabs {
-                padding: 15px;
-            }
-            
-            .tab {
-                padding: 10px 16px;
-                font-size: 14px;
-            }
-            
-            .action-bar {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            
-            .search-box {
-                min-width: auto;
-            }
-            
-            .stats-bar {
-                flex-direction: column;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>📋 项目任务管理系统</h1>
-            <p>基于飞书多维表格的智能任务管理平台</p>
-        </div>
-        
-        <div class="project-tabs" id="projectTabs">
-            <div class="loading">
-                <div class="spinner"></div>
-                正在加载项目...
+    <div class="app-container">
+        <!-- 顶部导航栏 -->
+        <header class="header">
+            <div class="header-content">
+                <h1 class="app-title">
+                    <i class="fas fa-tasks"></i>
+                    项目任务管理系统
+                </h1>
+                <div class="header-actions">
+                    <button class="btn btn-primary" id="syncBtn">
+                        <i class="fas fa-sync-alt"></i>
+                        同步数据
+                    </button>
+                    <button class="btn btn-secondary" id="reportBtn">
+                        <i class="fas fa-chart-line"></i>
+                        生成报告
+                    </button>
+                </div>
             </div>
-        </div>
-        
-        <div class="main-content">
-            <div class="action-bar">
-                <button class="add-task-btn" onclick="addTask()">
-                    ➕ 新增任务
+        </header>
+
+        <!-- 主要内容区域 -->
+        <main class="main-content">
+            <!-- 侧边栏 -->
+            <aside class="sidebar">
+                <div class="sidebar-section">
+                    <h3>项目筛选</h3>
+                    <div class="filter-group">
+                        <select id="projectFilter" class="form-select">
+                            <option value="">所有项目</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="sidebar-section">
+                    <h3>完成状态</h3>
+                    <div class="filter-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" value="false" checked>
+                            <span class="status-badge status-pending">未完成</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" value="true" checked>
+                            <span class="status-badge status-completed">已完成</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <h3>紧急程度</h3>
+                    <div class="filter-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" value="urgent" checked>
+                            <span class="priority-badge priority-urgent">紧急 (≤3天)</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" value="normal" checked>
+                            <span class="priority-badge priority-normal">正常 (>3天)</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" value="overdue" checked>
+                            <span class="priority-badge priority-overdue">已逾期</span>
+                        </label>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- 任务列表区域 -->
+            <section class="task-area">
+                <div class="task-header">
+                    <div class="task-controls">
+                        <button class="btn btn-success" id="addTaskBtn">
+                            <i class="fas fa-plus"></i>
+                            新增任务
+                        </button>
+                        <div class="view-toggle">
+                            <button class="btn btn-outline active" data-view="list">
+                                <i class="fas fa-list"></i>
+                                列表视图
+                            </button>
+                            <button class="btn btn-outline" data-view="kanban">
+                                <i class="fas fa-columns"></i>
+                                项目视图
+                            </button>
+                        </div>
+                    </div>
+                    <div class="search-box">
+                        <input type="text" id="searchInput" placeholder="搜索任务..." class="form-input">
+                        <i class="fas fa-search"></i>
+                    </div>
+                </div>
+
+                <!-- 任务列表视图 -->
+                <div id="listView" class="task-list-view">
+                    <div class="task-list" id="taskList">
+                        <!-- 任务项将通过JavaScript动态生成 -->
+                    </div>
+                </div>
+
+                <!-- 项目看板视图 -->
+                <div id="kanbanView" class="kanban-view" style="display: none;">
+                    <div class="kanban-board" id="kanbanBoard">
+                        <!-- 项目列将通过JavaScript动态生成 -->
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- 任务详情模态框 -->
+    <div id="taskModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">任务详情</h2>
+                <button class="modal-close" id="closeModal">
+                    <i class="fas fa-times"></i>
                 </button>
-                <input type="text" class="search-box" placeholder="搜索任务..." id="searchBox" onkeyup="filterTasks()">
             </div>
-            
-            <div class="stats-bar" id="statsBar" style="display: none;">
-                <div class="stat-item">
-                    <div class="stat-number" id="totalTasks">0</div>
-                    <div class="stat-label">总任务数</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-number" id="completedTasks">0</div>
-                    <div class="stat-label">已完成</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-number" id="inProgressTasks">0</div>
-                    <div class="stat-label">进行中</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-number" id="pendingTasks">0</div>
-                    <div class="stat-label">待开始</div>
-                </div>
+            <div class="modal-body">
+                <form id="taskForm">
+                    <div class="form-group">
+                        <label for="taskTitle">任务事项</label>
+                        <input type="text" id="taskTitle" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="taskProject">所属项目</label>
+                        <input type="text" id="taskProject" class="form-input" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="taskAssignee">对接人</label>
+                            <input type="text" id="taskAssignee" class="form-input">
+                        </div>
+                        <div class="form-group">
+                            <label for="taskDueDate">截止日期</label>
+                            <input type="date" id="taskDueDate" class="form-input">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="taskCompleted">
+                            是否已完成
+                        </label>
+                    </div>
+                </form>
             </div>
-            
-            <div class="tasks-container">
-                <div id="tasksList" class="loading">
-                    <div class="spinner"></div>
-                    正在加载任务...
-                </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancelBtn">取消</button>
+                <button type="submit" class="btn btn-primary" id="saveTaskBtn">保存</button>
             </div>
-        </div>
-        
-        <div class="report-section">
-            <h3>📊 智能报告生成</h3>
-            <button class="report-btn" onclick="generateDailyReport()">📅 生成日报</button>
-            <button class="report-btn" onclick="generateWeeklyReport()">📈 生成周报</button>
-            <div id="reportContent" class="report-content"></div>
         </div>
     </div>
 
-    <script src="js/config.js"></script>
-    <script src="js/feishu-api.js"></script>
-    <script src="js/app.js"></script>
+    <!-- 报告生成模态框 -->
+    <div id="reportModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>生成工作报告</h2>
+                <button class="modal-close" id="closeReportModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>报告类型</label>
+                    <div class="radio-group">
+                        <label class="radio-label">
+                            <input type="radio" name="reportType" value="daily" checked>
+                            日报
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="reportType" value="weekly">
+                            周报
+                        </label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="reportDate">报告日期</label>
+                    <input type="date" id="reportDate" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label for="reportProject">项目筛选</label>
+                    <select id="reportProject" class="form-select">
+                        <option value="">所有项目</option>
+                    </select>
+                </div>
+                <div id="reportContent" class="report-content" style="display: none;">
+                    <h3>生成的报告</h3>
+                    <div id="reportText" class="report-text"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancelReportBtn">取消</button>
+                <button type="button" class="btn btn-primary" id="generateReportBtn">生成报告</button>
+                <button type="button" class="btn btn-success" id="copyReportBtn" style="display: none;">复制报告</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 加载提示 -->
+    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+        <div class="loading-spinner">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>正在处理...</p>
+        </div>
+    </div>
+
+    <!-- JavaScript文件 -->
+    <script src="feishu-api.js"></script>
+    <script src="doubao-api.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>
