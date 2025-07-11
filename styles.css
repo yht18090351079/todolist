@@ -403,22 +403,18 @@ body {
 /* 项目标签页导航 */
 .project-tabs {
     display: flex;
+    flex-wrap: wrap; /* 允许换行 */
     gap: 0.5rem;
     margin-bottom: 2rem;
     padding: 0.5rem;
     background: #f8f9fa;
     border-radius: 12px;
-    overflow-x: auto;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-}
-
-.project-tabs::-webkit-scrollbar {
-    display: none;
+    /* 移除overflow-x: auto，改为换行显示 */
 }
 
 .project-tab {
-    min-width: 200px;
+    min-width: 180px; /* 稍微减小最小宽度 */
+    flex: 0 0 auto; /* 不拉伸，保持固定大小 */
     padding: 1rem;
     background: white;
     border-radius: 8px;

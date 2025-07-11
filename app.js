@@ -841,14 +841,22 @@ class TaskManager {
 
             console.log('更新任务完成状态:', taskId, completed);
 
-            // 调用API更新任务状态
-            const result = await window.feishuTaskAPI.updateTask(taskId, {
+            // 准备更新数据
+            const updateData = {
                 title: task.title,
                 project: task.project,
                 assignee: task.assignee,
                 dueDate: task.dueDate,
                 completed: completed
-            });
+            };
+
+            // 如果标记为完成，记录完成时间
+            if (completed) {
+                updateData.completedTime = Date.now();
+            }
+
+            // 调用API更新任务状态
+            const result = await window.feishuTaskAPI.updateTask(taskId, updateData);
 
             if (result.success) {
                 // 更新本地数据

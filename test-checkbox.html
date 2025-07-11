@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>复选框功能测试</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div style="max-width: 800px; margin: 2rem auto; padding: 2rem; background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+        <h1>✅ 任务复选框功能测试</h1>
+        
+        <div style="margin-bottom: 2rem;">
+            <h2>列表视图样式</h2>
+            <div class="task-item" data-task-id="test1">
+                <div class="task-item-header">
+                    <div class="task-checkbox-container">
+                        <input type="checkbox" class="task-checkbox" data-task-id="test1">
+                        <div class="task-info">
+                            <div class="task-title">测试任务 - 未完成</div>
+                            <div class="task-project">测试项目</div>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span class="priority-badge priority-normal">正常</span>
+                    </div>
+                </div>
+                <div class="task-meta">
+                    <div class="task-assignee">
+                        <i class="fas fa-user"></i>
+                        测试人员
+                    </div>
+                    <div class="task-due-date">
+                        <i class="fas fa-calendar"></i>
+                        2024-12-10
+                    </div>
+                </div>
+            </div>
+
+            <div class="task-item completed" data-task-id="test2">
+                <div class="task-item-header">
+                    <div class="task-checkbox-container">
+                        <input type="checkbox" class="task-checkbox" data-task-id="test2" checked>
+                        <div class="task-info">
+                            <div class="task-title">测试任务 - 已完成</div>
+                            <div class="task-project">测试项目</div>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span class="priority-badge priority-normal">正常</span>
+                    </div>
+                </div>
+                <div class="task-meta">
+                    <div class="task-assignee">
+                        <i class="fas fa-user"></i>
+                        测试人员
+                    </div>
+                    <div class="task-due-date">
+                        <i class="fas fa-calendar"></i>
+                        2024-12-08
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div style="margin-bottom: 2rem;">
+            <h2>项目标签页样式</h2>
+            <div class="project-task" data-task-id="test3">
+                <div class="task-main">
+                    <div class="task-checkbox-container">
+                        <input type="checkbox" class="task-checkbox project-task-checkbox" data-task-id="test3">
+                    </div>
+                    <div class="task-content">
+                        <div class="task-title">项目任务 - 未完成</div>
+                        <div class="task-details">
+                            <span class="task-assignee">
+                                <i class="fas fa-user"></i>
+                                测试人员
+                            </span>
+                            <span class="task-due">
+                                <i class="fas fa-calendar"></i>
+                                2024-12-10
+                            </span>
+                            <span class="priority-badge priority-urgent">紧急</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="project-task completed" data-task-id="test4">
+                <div class="task-main">
+                    <div class="task-checkbox-container">
+                        <input type="checkbox" class="task-checkbox project-task-checkbox" data-task-id="test4" checked>
+                    </div>
+                    <div class="task-content">
+                        <div class="task-title">项目任务 - 已完成</div>
+                        <div class="task-details">
+                            <span class="task-assignee">
+                                <i class="fas fa-user"></i>
+                                测试人员
+                            </span>
+                            <span class="task-due">
+                                <i class="fas fa-calendar"></i>
+                                2024-12-08
+                            </span>
+                            <span class="priority-badge priority-normal">正常</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px;">
+            <h3>功能说明：</h3>
+            <ul>
+                <li>✅ 点击复选框可以切换任务完成状态</li>
+                <li>✅ 已完成的任务标题会显示删除线</li>
+                <li>✅ 已完成的任务整体透明度降低</li>
+                <li>✅ 复选框使用绿色主题色</li>
+                <li>✅ 点击复选框不会触发任务编辑</li>
+            </ul>
+        </div>
+
+        <div style="margin-top: 1rem; padding: 1rem; background: #e3f2fd; border-radius: 8px;">
+            <h4>测试交互：</h4>
+            <p>点击上面的复选框测试样式变化效果</p>
+        </div>
+    </div>
+
+    <script>
+        // 测试复选框交互
+        document.querySelectorAll('.task-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', (e) => {
+                const taskId = e.target.dataset.taskId;
+                const completed = e.target.checked;
+                const taskItem = e.target.closest('.task-item, .project-task');
+                
+                console.log('任务状态变更:', taskId, completed ? '完成' : '未完成');
+                
+                // 更新样式
+                if (completed) {
+                    taskItem.classList.add('completed');
+                } else {
+                    taskItem.classList.remove('completed');
+                }
+                
+                // 显示提示
+                const message = completed ? '任务已标记为完成' : '任务已标记为未完成';
+                alert(message);
+            });
+        });
+    </script>
+</body>
+</html>
