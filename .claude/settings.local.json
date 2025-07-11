@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:open.larkoffice.com)",
+      "Bash(mkdir -p /Volumes/ORICO/todolist/js)",
+      "Bash(npm install)",
+      "Bash(npm install express cors)",
+      "Bash(npm run dev)"
+    ],
+    "deny": []
+  }
+}

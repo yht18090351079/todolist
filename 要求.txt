@@ -1,0 +1,31 @@
+1.目标 我要做一个按照项目来管理的tasklist
+2.后端采用飞书多维表格https://wcn0pu8598xr.feishu.cn/base/DPIqbB7OWa05ZZsiQi8cP1jnnBb?table=tblAyK0L5R7iuKWz&view=vewM1Y9Vem
+3.飞书里面已经设置好了字段 也有测试数据，所以需要按照这些字段来设计系统
+4.App ID cli_a8d4bd05dbf8100b  IRUdgTp1k825LXp1kz2W4gxcvaRAqtcv
+5.系统要部署在netlify，所以需要静态页面  而且本地也要测试
+6.系统要有日报周报总结功能 使用豆包大模型
+curl https://ark.cn-beijing.volces.com/api/v3/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer e90111f2-f6a4-40c3-a657-b8383007166f" \
+  -d $'{
+    "model": "doubao-seed-1-6-thinking-250615",
+    "messages": [
+        {
+            "content": [
+                {
+                    "text": "图片主要讲了什么?",
+                    "type": "text"
+                },
+                {
+                    "image_url": {
+                        "url": "https://ark-project.tos-cn-beijing.ivolces.com/images/view.jpeg"
+                    },
+                    "type": "image_url"
+                }
+            ],
+            "role": "user"
+        }
+    ]
+}'
+7.页面不存储数据，所有的数据来自飞书。系统可以写入飞书
+8.0  我的飞书表格所有人都有编辑权限

@@ -1,0 +1,25 @@
+{
+  "name": "project-task-manager",
+  "version": "1.0.0",
+  "description": "基于飞书多维表格的项目任务管理系统",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "static": "http-server -p 8000 -o"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.2"
+  },
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  },
+  "keywords": [
+    "task-management",
+    "feishu",
+    "netlify"
+  ],
+  "author": "",
+  "license": "MIT"
+}
