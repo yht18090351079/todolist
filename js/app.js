@@ -359,13 +359,26 @@ let taskManager;
 
 // 页面加载完成后初始化
 document.addEventListener('DOMContentLoaded', () => {
-    taskManager = new TaskManager();
+    try {
+        taskManager = new TaskManager();
+    } catch (error) {
+        console.error('TaskManager初始化失败:', error);
+        // 即使初始化失败，也要确保基本功能可用
+        taskManager = {
+            addTask: () => alert('系统正在初始化中，请稍后再试...'),
+            generateDailyReport: () => alert('系统正在初始化中，请稍后再试...'),
+            generateWeeklyReport: () => alert('系统正在初始化中，请稍后再试...'),
+            filterTasks: () => console.log('搜索功能暂时不可用')
+        };
+    }
 });
 
 // 全局函数供HTML调用
 function addTask() {
     if (taskManager) {
         taskManager.addTask();
+    } else {
+        alert('系统正在加载中，请稍后再试...');
     }
 }
 

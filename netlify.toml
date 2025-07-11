@@ -1,6 +1,7 @@
 [build]
   publish = "."
-  
+  functions = "netlify/functions"
+
 [[headers]]
   for = "/*"
   [headers.values]
@@ -9,6 +10,18 @@
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
 
+# API代理重定向规则
+[[redirects]]
+  from = "/api/feishu/*"
+  to = "/.netlify/functions/feishu-proxy/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/api/doubao/*"
+  to = "/.netlify/functions/doubao-proxy"
+  status = 200
+
+# SPA重定向规则（放在最后）
 [[redirects]]
   from = "/*"
   to = "/index.html"
