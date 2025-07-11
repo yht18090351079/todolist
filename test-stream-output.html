@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>流式输出测试</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: #f8f9fa;
+        }
+        .test-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        .btn {
+            background: #4299e1;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 0.5rem;
+        }
+        .btn:hover {
+            background: #3182ce;
+        }
+        .report-text {
+            white-space: pre-wrap;
+            line-height: 1.8;
+            font-size: 0.875rem;
+            max-height: 400px;
+            overflow-y: auto;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            position: relative;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 1rem 0;
+            min-height: 200px;
+        }
+        .report-text.typing::after {
+            content: '|';
+            color: #4299e1;
+            animation: blink 1s infinite;
+            font-weight: bold;
+        }
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+        .demo-section {
+            margin: 2rem 0;
+            padding: 1rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🚀 流式输出效果测试</h1>
+        
+        <div class="demo-section">
+            <h2>📝 模拟日报生成</h2>
+            <button class="btn" onclick="simulateDailyReport()">生成日报（流式输出）</button>
+            <div id="dailyReport" class="report-text"></div>
+        </div>
+
+        <div class="demo-section">
+            <h2>📊 模拟周报生成</h2>
+            <button class="btn" onclick="simulateWeeklyReport()">生成周报（流式输出）</button>
+            <div id="weeklyReport" class="report-text"></div>
+        </div>
+
+        <div class="demo-section">
+            <h2>🧪 自定义测试</h2>
+            <textarea id="customText" placeholder="输入要测试的文本内容..." style="width: 100%; height: 100px; padding: 0.5rem; border: 1px solid #e2e8f0; border-radius: 4px;"></textarea>
+            <br>
+            <button class="btn" onclick="simulateCustomText()">测试自定义文本</button>
+            <div id="customOutput" class="report-text"></div>
+        </div>
+
+        <div class="demo-section">
+            <h2>⚙️ 设置</h2>
+            <label>
+                打字速度: 
+                <input type="range" id="speedSlider" min="10" max="100" value="20" onchange="updateSpeed()">
+                <span id="speedValue">20ms</span>
+            </label>
+        </div>
+    </div>
+
+    <script>
+        let typingSpeed = 20;
+
+        function updateSpeed() {
+            const slider = document.getElementById('speedSlider');
+            typingSpeed = parseInt(slider.value);
+            document.getElementById('speedValue').textContent = typingSpeed + 'ms';
+        }
+
+        function displayWithTypewriter(elementId, content) {
+            const element = document.getElementById(elementId);
+            element.textContent = '';
+            element.classList.add('typing');
+            
+            let index = 0;
+            
+            // 显示正在生成的提示
+            element.innerHTML = '<span style="color: #4299e1;">🤖 AI正在生成内容...</span>';
+            
+            setTimeout(() => {
+                element.textContent = '';
+                
+                function typeWriter() {
+                    if (index < content.length) {
+                        element.textContent += content.charAt(index);
+                        index++;
+                        
+                        // 自动滚动到底部
+                        element.scrollTop = element.scrollHeight;
+                        
+                        setTimeout(typeWriter, typingSpeed);
+                    } else {
+                        // 打字完成，移除光标动画
+                        element.classList.remove('typing');
+                        console.log('✅ 内容显示完成');
+                        
+                        // 添加完成提示
+                        setTimeout(() => {
+                            const completeIndicator = document.createElement('div');
+                            completeIndicator.style.cssText = `
+                                margin-top: 1rem;
+                                padding: 0.5rem;
+                                background: #e6fffa;
+                                border-left: 3px solid #38b2ac;
+                                border-radius: 4px;
+                                font-size: 0.875rem;
+                                color: #2d3748;
+                            `;
+                            completeIndicator.innerHTML = '✅ 内容生成完成';
+                            element.appendChild(completeIndicator);
+                        }, 200);
+                    }
+                }
+                
+                typeWriter();
+            }, 800);
+        }
+
+        function simulateDailyReport() {
+            const dailyReportContent = `# 📅 工作日报 - ${new Date().toLocaleDateString()}
+
+## 今日完成任务
+✅ 完成项目需求分析文档
+   - 梳理了用户需求和功能点
+   - 制定了开发计划和时间节点
+   - 与产品团队确认了核心功能
+
+✅ 解决技术难题
+   - 修复了数据同步问题
+   - 优化了API响应速度
+   - 完善了错误处理机制
+
+✅ 团队协作
+   - 参与了技术评审会议
+   - 协助新同事解决开发问题
+   - 更新了项目文档
+
+## 工作亮点
+- 🚀 提前完成了既定目标
+- 💡 提出了性能优化方案
+- 🤝 积极配合团队协作
+
+## 遇到的问题
+- 第三方API偶尔响应超时
+- 部分功能需要进一步优化
+
+## 明日计划
+- 继续推进核心功能开发
+- 优化系统性能
+- 准备下阶段的技术方案
+
+## 总结
+今天的工作进展顺利，按计划完成了主要任务。明天将继续专注于项目推进，确保质量和进度并重。`;
+
+            displayWithTypewriter('dailyReport', dailyReportContent);
+        }
+
+        function simulateWeeklyReport() {
+            const weeklyReportContent = `# 📊 工作周报 - 第${Math.ceil(new Date().getDate()/7)}周
+
+## 本周工作总结
+本周共完成多项重要任务，项目进展顺利，团队协作效果良好。
+
+### 主要成果
+📈 **项目进度**
+- 完成了核心功能模块开发
+- 通过了代码审查和测试
+- 部署到测试环境并验证功能
+
+🔧 **技术优化**
+- 解决了3个关键技术问题
+- 优化了系统性能，响应速度提升30%
+- 完善了监控和日志系统
+
+👥 **团队协作**
+- 参与了5次技术讨论会议
+- 协助团队成员解决开发问题
+- 分享了最佳实践和经验
+
+### 数据统计
+- 完成任务数：12个
+- 代码提交：25次
+- 解决Bug：8个
+- 文档更新：3份
+
+### 本周亮点
+- 🏆 提前完成了里程碑目标
+- 💡 提出了创新的解决方案
+- 🎯 零缺陷交付了重要功能
+
+## 下周计划
+- 开始下一阶段的功能开发
+- 进行性能压力测试
+- 准备产品演示和用户培训
+- 优化开发流程和工具
+
+## 学习与成长
+- 深入学习了新的技术栈
+- 提升了问题分析和解决能力
+- 加强了跨团队沟通协作
+
+## 总结
+本周工作成果丰硕，团队配合默契。下周将继续保持高效的工作状态，推进项目向前发展。`;
+
+            displayWithTypewriter('weeklyReport', weeklyReportContent);
+        }
+
+        function simulateCustomText() {
+            const customText = document.getElementById('customText').value;
+            if (!customText.trim()) {
+                alert('请输入要测试的文本内容');
+                return;
+            }
+            displayWithTypewriter('customOutput', customText);
+        }
+
+        // 页面加载时的说明
+        window.onload = function() {
+            console.log('🚀 流式输出测试页面已加载');
+            console.log('点击按钮体验AI报告的流式生成效果');
+        };
+    </script>
+</body>
+</html>

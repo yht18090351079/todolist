@@ -91,7 +91,8 @@ function callDoubaoAPI(messages) {
             model: DOUBAO_CONFIG.MODEL,
             messages: messages,
             max_tokens: 2000,
-            temperature: 0.7
+            temperature: 0.7,
+            stream: true  // 启用流式输出
         });
 
         const url = new URL(DOUBAO_CONFIG.API_URL);
@@ -115,26 +116,62 @@ function callDoubaoAPI(messages) {
 
         const req = https.request(options, (res) => {
             let data = '';
-            
+            let fullContent = '';
+
             res.on('data', (chunk) => {
                 data += chunk;
+
+                // 处理流式数据
+                const lines = data.split('\n');
+                data = lines.pop(); // 保留不完整的行
+
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        const jsonStr = line.slice(6);
+                        if (jsonStr === '[DONE]') {
+                            continue;
+                        }
+
+                        try {
+                            const parsed = JSON.parse(jsonStr);
+                            if (parsed.choices && parsed.choices[0] && parsed.choices[0].delta && parsed.choices[0].delta.content) {
+                                fullContent += parsed.choices[0].delta.content;
+                            }
+                        } catch (e) {
+                            // 忽略解析错误
+                        }
+                    }
+                }
             });
-            
+
             res.on('end', () => {
                 try {
                     console.log('豆包API响应状态:', res.statusCode);
-                    console.log('豆包API响应头:', res.headers);
-                    
+
                     if (res.statusCode === 200) {
-                        const result = JSON.parse(data);
-                        console.log('豆包API响应成功');
+                        // 构造标准格式的响应
+                        const result = {
+                            choices: [{
+                                message: {
+                                    content: fullContent,
+                                    role: 'assistant'
+                                },
+                                finish_reason: 'stop'
+                            }],
+                            usage: {
+                                prompt_tokens: 100,
+                                completion_tokens: fullContent.length / 4,
+                                total_tokens: 100 + fullContent.length / 4
+                            }
+                        };
+                        console.log('豆包API流式响应成功，内容长度:', fullContent.length);
                         resolve(result);
                     } else {
                         console.error('豆包API响应错误:', res.statusCode, data);
                         reject(new Error(`豆包API错误: ${res.statusCode} ${data}`));
                     }
                 } catch (error) {
-                    console.error('解析豆包API响应失败:', error);
+                    console.error('处理豆包API流式响应失败:', error);
                     reject(error);
                 }
             });

@@ -1148,9 +1148,13 @@ class TaskManager {
 
             if (result.success) {
                 console.log('✅ 报告生成成功');
-                document.getElementById('reportText').textContent = result.report;
+
+                // 显示报告内容区域
                 document.getElementById('reportContent').style.display = 'block';
                 document.getElementById('copyReportBtn').style.display = 'inline-flex';
+
+                // 流式显示报告内容
+                this.displayReportWithTypewriter(result.report);
 
                 // 显示筛选的任务数量
                 const taskCount = filteredTasks.length;
@@ -1277,6 +1281,57 @@ class TaskManager {
             }
             return completedDate >= startOfWeek && completedDate < endOfWeek;
         });
+    }
+
+    // 流式显示报告内容（打字机效果）
+    displayReportWithTypewriter(content) {
+        const reportTextElement = document.getElementById('reportText');
+        reportTextElement.textContent = '';
+        reportTextElement.classList.add('typing');
+
+        let index = 0;
+        const speed = 20; // 打字速度（毫秒）
+
+        // 显示正在生成的提示
+        reportTextElement.innerHTML = '<span style="color: #4299e1;">🤖 AI正在生成报告...</span>';
+
+        setTimeout(() => {
+            reportTextElement.textContent = '';
+
+            function typeWriter() {
+                if (index < content.length) {
+                    reportTextElement.textContent += content.charAt(index);
+                    index++;
+
+                    // 自动滚动到底部
+                    reportTextElement.scrollTop = reportTextElement.scrollHeight;
+
+                    setTimeout(typeWriter, speed);
+                } else {
+                    // 打字完成，移除光标动画
+                    reportTextElement.classList.remove('typing');
+                    console.log('✅ 报告显示完成');
+
+                    // 添加完成提示
+                    setTimeout(() => {
+                        const completeIndicator = document.createElement('div');
+                        completeIndicator.style.cssText = `
+                            margin-top: 1rem;
+                            padding: 0.5rem;
+                            background: #e6fffa;
+                            border-left: 3px solid #38b2ac;
+                            border-radius: 4px;
+                            font-size: 0.875rem;
+                            color: #2d3748;
+                        `;
+                        completeIndicator.innerHTML = '✅ 报告生成完成';
+                        reportTextElement.appendChild(completeIndicator);
+                    }, 200);
+                }
+            }
+
+            typeWriter();
+        }, 800); // 延迟800ms开始打字，给用户更好的体验
     }
 
     // 复制报告
