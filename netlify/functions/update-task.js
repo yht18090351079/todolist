@@ -152,22 +152,40 @@ exports.handler = async (event, context) => {
 
     try {
         // 解析请求体
-        const requestData = JSON.parse(event.body);
+        let requestData;
+        try {
+            requestData = JSON.parse(event.body || '{}');
+        } catch (parseError) {
+            console.error('❌ 请求体解析失败:', parseError);
+            return {
+                statusCode: 400,
+                headers,
+                body: JSON.stringify({
+                    success: false,
+                    message: '请求数据格式错误'
+                })
+            };
+        }
+
         const { taskId, ...taskData } = requestData;
         
         // 验证taskId
         if (!taskId) {
+            console.error('❌ 缺少任务ID');
             return {
                 statusCode: 400,
                 headers,
-                body: JSON.stringify({ 
-                    success: false, 
-                    message: '任务ID为必填字段' 
+                body: JSON.stringify({
+                    success: false,
+                    message: '任务ID为必填字段'
                 })
             };
         }
 
         console.log('开始更新飞书任务:', taskId, taskData);
+        console.log('=== 更新任务API接收的数据 ===');
+        console.log('taskId:', taskId);
+        console.log('taskData:', JSON.stringify(taskData, null, 2));
         
         // 获取访问令牌
         const accessToken = await getAccessToken();
@@ -189,13 +207,23 @@ exports.handler = async (event, context) => {
         
     } catch (error) {
         console.error('❌ 更新任务失败:', error.message);
-        
+        console.error('错误详情:', error);
+
+        // 提供更友好的错误信息
+        let errorMessage = error.message;
+        if (error.message.includes('获取访问令牌失败')) {
+            errorMessage = '飞书API访问失败，请检查应用配置';
+        } else if (error.message.includes('更新任务失败')) {
+            errorMessage = '任务更新失败，可能是权限问题或数据格式错误';
+        }
+
         return {
-            statusCode: 500,
+            statusCode: 200, // 改为200，让前端处理错误
             headers,
             body: JSON.stringify({
                 success: false,
-                message: error.message
+                message: errorMessage,
+                error: error.message
             })
         };
     }

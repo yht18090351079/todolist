@@ -153,7 +153,20 @@ exports.handler = async (event, context) => {
 
     try {
         // 解析请求体
-        const taskData = JSON.parse(event.body);
+        let taskData;
+        try {
+            taskData = JSON.parse(event.body || '{}');
+        } catch (parseError) {
+            console.error('❌ 请求体解析失败:', parseError);
+            return {
+                statusCode: 400,
+                headers,
+                body: JSON.stringify({
+                    success: false,
+                    message: '请求数据格式错误'
+                })
+            };
+        }
         
         // 验证必填字段
         if (!taskData.title || !taskData.project) {
@@ -168,6 +181,8 @@ exports.handler = async (event, context) => {
         }
 
         console.log('开始创建飞书任务:', taskData);
+        console.log('=== 创建任务API接收的数据 ===');
+        console.log('taskData:', JSON.stringify(taskData, null, 2));
         
         // 获取访问令牌
         const accessToken = await getAccessToken();
@@ -189,13 +204,23 @@ exports.handler = async (event, context) => {
         
     } catch (error) {
         console.error('❌ 创建任务失败:', error.message);
-        
+        console.error('错误详情:', error);
+
+        // 提供更友好的错误信息
+        let errorMessage = error.message;
+        if (error.message.includes('获取访问令牌失败')) {
+            errorMessage = '飞书API访问失败，请检查应用配置';
+        } else if (error.message.includes('创建任务失败')) {
+            errorMessage = '任务创建失败，可能是权限问题或数据格式错误';
+        }
+
         return {
-            statusCode: 500,
+            statusCode: 200, // 改为200，让前端处理错误
             headers,
             body: JSON.stringify({
                 success: false,
-                message: error.message
+                message: errorMessage,
+                error: error.message
             })
         };
     }
