@@ -30,18 +30,26 @@ async function getAccessToken() {
 
         const req = https.request(options, (res) => {
             let data = '';
+            console.log('获取访问令牌响应状态:', res.statusCode);
+
             res.on('data', (chunk) => {
                 data += chunk;
             });
             res.on('end', () => {
                 try {
+                    console.log('访问令牌API原始响应:', data);
                     const result = JSON.parse(data);
+
                     if (result.code === 0) {
+                        console.log('✅ 访问令牌获取成功');
                         resolve(result.tenant_access_token);
                     } else {
-                        reject(new Error(`获取访问令牌失败: ${result.msg}`));
+                        console.error('❌ 获取访问令牌失败:', result);
+                        reject(new Error(`获取访问令牌失败: ${result.msg || result.message || '未知错误'}`));
                     }
                 } catch (error) {
+                    console.error('❌ 解析访问令牌响应失败:', error);
+                    console.error('原始响应数据:', data);
                     reject(error);
                 }
             });
@@ -96,18 +104,27 @@ async function updateTask(accessToken, taskId, taskData) {
 
         const req = https.request(options, (res) => {
             let data = '';
+            console.log('飞书API响应状态:', res.statusCode);
+
             res.on('data', (chunk) => {
                 data += chunk;
             });
             res.on('end', () => {
                 try {
+                    console.log('飞书API原始响应:', data);
                     const result = JSON.parse(data);
+                    console.log('飞书API解析结果:', result);
+
                     if (result.code === 0) {
+                        console.log('✅ 飞书API更新成功');
                         resolve(result.data);
                     } else {
-                        reject(new Error(`更新任务失败: ${result.msg}`));
+                        console.error('❌ 飞书API返回错误:', result);
+                        reject(new Error(`更新任务失败: ${result.msg || result.message || '未知错误'}`));
                     }
                 } catch (error) {
+                    console.error('❌ 解析飞书API响应失败:', error);
+                    console.error('原始响应数据:', data);
                     reject(error);
                 }
             });
