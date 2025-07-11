@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>日报功能测试</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: #f8f9fa;
+        }
+        .test-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin-bottom: 2rem;
+            padding: 1rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+        }
+        .btn {
+            background: #4299e1;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 0.5rem;
+        }
+        .btn:hover {
+            background: #3182ce;
+        }
+        .log {
+            background: #f7fafc;
+            padding: 1rem;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 0.875rem;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .task-item {
+            background: #f8f9fa;
+            padding: 0.75rem;
+            margin: 0.5rem 0;
+            border-radius: 6px;
+            border-left: 4px solid #48bb78;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>📅 日报功能测试</h1>
+        
+        <div class="test-section">
+            <h2>1. 测试任务筛选</h2>
+            <p>模拟一些已完成的任务，测试日期筛选功能</p>
+            <button class="btn" onclick="testTaskFiltering()">测试任务筛选</button>
+            <div id="filterLog" class="log" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>2. 测试豆包API代理</h2>
+            <p>测试通过代理服务器调用豆包API</p>
+            <button class="btn" onclick="testDoubaoAPI()">测试豆包API</button>
+            <div id="apiLog" class="log" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>3. 完整日报生成测试</h2>
+            <p>使用模拟数据生成完整日报</p>
+            <input type="date" id="testDate" value="2025-07-11">
+            <button class="btn" onclick="testFullDailyReport()">生成测试日报</button>
+            <div id="reportLog" class="log" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>4. 模拟任务数据</h2>
+            <div id="mockTasks"></div>
+        </div>
+    </div>
+
+    <script>
+        // 模拟任务数据
+        const mockTasks = [
+            {
+                id: 'task1',
+                title: '完成项目需求分析',
+                project: '测试项目',
+                assignee: '张三',
+                completed: true,
+                completedTime: new Date('2025-07-11 09:30:00').getTime(),
+                createTime: new Date('2025-07-10 14:00:00').getTime()
+            },
+            {
+                id: 'task2', 
+                title: '编写技术文档',
+                project: '测试项目',
+                assignee: '李四',
+                completed: true,
+                completedTime: new Date('2025-07-11 15:45:00').getTime(),
+                createTime: new Date('2025-07-10 16:00:00').getTime()
+            },
+            {
+                id: 'task3',
+                title: '代码审查',
+                project: '新疆电网一期',
+                assignee: '王五',
+                completed: true,
+                completedTime: new Date('2025-07-10 11:20:00').getTime(),
+                createTime: new Date('2025-07-09 10:00:00').getTime()
+            },
+            {
+                id: 'task4',
+                title: '未完成的任务',
+                project: '测试项目',
+                assignee: '赵六',
+                completed: false,
+                createTime: new Date('2025-07-11 08:00:00').getTime()
+            }
+        ];
+
+        // 显示模拟任务
+        function displayMockTasks() {
+            const container = document.getElementById('mockTasks');
+            container.innerHTML = mockTasks.map(task => `
+                <div class="task-item">
+                    <strong>${task.title}</strong><br>
+                    项目: ${task.project} | 负责人: ${task.assignee}<br>
+                    状态: ${task.completed ? '✅ 已完成' : '⏳ 进行中'}<br>
+                    ${task.completedTime ? `完成时间: ${new Date(task.completedTime).toLocaleString()}` : ''}
+                </div>
+            `).join('');
+        }
+
+        // 测试任务筛选
+        function testTaskFiltering() {
+            const log = document.getElementById('filterLog');
+            log.style.display = 'block';
+            log.textContent = '';
+
+            function logMessage(msg) {
+                log.textContent += msg + '\n';
+            }
+
+            logMessage('🔍 开始测试任务筛选...');
+            
+            // 模拟筛选2025-07-11的任务
+            const targetDate = '2025-07-11';
+            const date = new Date(targetDate);
+            const startOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+            const endOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1);
+            
+            logMessage(`筛选日期范围: ${startOfDay.toLocaleString()} - ${endOfDay.toLocaleString()}`);
+            
+            const filteredTasks = mockTasks.filter(task => {
+                if (!task.completed) {
+                    return false;
+                }
+                
+                let completedTime = task.completedTime || task.completeTime || task.完成时间;
+                if (!completedTime && task.createTime) {
+                    logMessage(`⚠️ 任务 "${task.title}" 没有完成时间，使用创建时间作为备选`);
+                    completedTime = task.createTime;
+                }
+                
+                if (!completedTime) {
+                    logMessage(`❌ 任务 "${task.title}" 没有时间信息，跳过`);
+                    return false;
+                }
+                
+                const completedDate = new Date(completedTime);
+                const isInRange = completedDate >= startOfDay && completedDate < endOfDay;
+                
+                if (isInRange) {
+                    logMessage(`✅ 找到匹配任务: "${task.title}" 完成于 ${completedDate.toLocaleString()}`);
+                }
+                
+                return isInRange;
+            });
+            
+            logMessage(`\n📋 筛选结果: 找到 ${filteredTasks.length} 个在 ${targetDate} 完成的任务`);
+            filteredTasks.forEach(task => {
+                logMessage(`  - ${task.title} (${task.project})`);
+            });
+        }
+
+        // 测试豆包API
+        async function testDoubaoAPI() {
+            const log = document.getElementById('apiLog');
+            log.style.display = 'block';
+            log.textContent = '';
+
+            function logMessage(msg) {
+                log.textContent += msg + '\n';
+            }
+
+            logMessage('🤖 开始测试豆包API...');
+            
+            try {
+                // 检测环境
+                const proxyUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+                    ? 'http://localhost:3002' 
+                    : 'https://tasklit.netlify.app/.netlify/functions';
+                
+                logMessage(`使用代理URL: ${proxyUrl}`);
+                
+                const testMessages = [
+                    {
+                        role: 'user',
+                        content: '请简单介绍一下你自己，不超过50字。'
+                    }
+                ];
+                
+                logMessage('发送测试请求...');
+                
+                const response = await fetch(`${proxyUrl}/doubao-chat`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        messages: testMessages
+                    })
+                });
+                
+                logMessage(`响应状态: ${response.status}`);
+                
+                const data = await response.json();
+                logMessage(`响应数据: ${JSON.stringify(data, null, 2)}`);
+                
+                if (data.success) {
+                    logMessage('✅ 豆包API测试成功!');
+                } else {
+                    logMessage(`❌ 豆包API测试失败: ${data.error}`);
+                }
+                
+            } catch (error) {
+                logMessage(`❌ 测试异常: ${error.message}`);
+            }
+        }
+
+        // 测试完整日报生成
+        async function testFullDailyReport() {
+            const log = document.getElementById('reportLog');
+            log.style.display = 'block';
+            log.textContent = '';
+
+            function logMessage(msg) {
+                log.textContent += msg + '\n';
+            }
+
+            const testDate = document.getElementById('testDate').value;
+            logMessage(`📅 生成 ${testDate} 的日报...`);
+            
+            // 这里可以调用实际的日报生成逻辑
+            logMessage('功能开发中，请在主页面测试完整功能');
+        }
+
+        // 页面加载时显示模拟任务
+        window.onload = function() {
+            displayMockTasks();
+        };
+    </script>
+</body>
+</html>

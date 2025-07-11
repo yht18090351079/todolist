@@ -9,33 +9,48 @@ class DoubaoAPI {
         };
     }
 
+    // 获取代理服务器URL
+    getProxyUrl() {
+        // 检测环境：本地开发 vs 生产环境
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            return 'http://localhost:3002';
+        } else {
+            return 'https://tasklit.netlify.app/.netlify/functions';
+        }
+    }
+
     // 调用豆包API生成文本
     async generateText(messages) {
         try {
             console.log('调用豆包API生成文本...');
 
-            const response = await fetch(this.config.API_URL, {
+            // 使用代理服务器调用豆包API
+            const proxyUrl = this.getProxyUrl();
+            const response = await fetch(`${proxyUrl}/doubao-chat`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this.config.API_KEY}`
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    model: this.config.MODEL,
                     messages: messages
                 })
             });
 
             const data = await response.json();
 
-            if (response.ok && data.choices && data.choices.length > 0) {
-                console.log('✅ 豆包API调用成功');
-                return {
-                    success: true,
-                    content: data.choices[0].message.content
-                };
+            if (response.ok && data.success) {
+                const doubaoResponse = data.data;
+                if (doubaoResponse.choices && doubaoResponse.choices.length > 0) {
+                    console.log('✅ 豆包API调用成功');
+                    return {
+                        success: true,
+                        content: doubaoResponse.choices[0].message.content
+                    };
+                } else {
+                    throw new Error('豆包API返回格式错误');
+                }
             } else {
-                throw new Error(`豆包API调用失败: ${data.error?.message || '未知错误'}`);
+                throw new Error(`代理服务器调用失败: ${data.error || '未知错误'}`);
             }
         } catch (error) {
             console.error('❌ 豆包API调用失败:', error);

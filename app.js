@@ -1159,13 +1159,36 @@ class TaskManager {
         const startOfDay = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
         const endOfDay = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate() + 1);
 
+        console.log(`🔍 筛选日期范围: ${startOfDay.toLocaleString()} - ${endOfDay.toLocaleString()}`);
+
         return this.tasks.filter(task => {
-            if (!task.completed || !task.completedTime) {
+            // 如果任务未完成，直接排除
+            if (!task.completed) {
                 return false;
             }
 
-            const completedDate = new Date(task.completedTime);
-            return completedDate >= startOfDay && completedDate < endOfDay;
+            // 检查完成时间字段（可能的字段名）
+            let completedTime = task.completedTime || task.completeTime || task.完成时间;
+
+            // 如果没有完成时间，但任务已完成，使用创建时间作为备选
+            if (!completedTime && task.createTime) {
+                console.log(`⚠️ 任务 "${task.title}" 没有完成时间，使用创建时间作为备选`);
+                completedTime = task.createTime;
+            }
+
+            if (!completedTime) {
+                console.log(`❌ 任务 "${task.title}" 没有时间信息，跳过`);
+                return false;
+            }
+
+            const completedDate = new Date(completedTime);
+            const isInRange = completedDate >= startOfDay && completedDate < endOfDay;
+
+            if (isInRange) {
+                console.log(`✅ 找到匹配任务: "${task.title}" 完成于 ${completedDate.toLocaleString()}`);
+            }
+
+            return isInRange;
         });
     }
 
@@ -1184,14 +1207,27 @@ class TaskManager {
         const endOfWeek = new Date(startOfWeek);
         endOfWeek.setDate(startOfWeek.getDate() + 7);
 
-        console.log(`📅 周报时间范围: ${startOfWeek.toLocaleDateString()} - ${endOfWeek.toLocaleDateString()}`);
+        console.log(`📅 周报时间范围: ${startOfWeek.toLocaleString()} - ${endOfWeek.toLocaleString()}`);
 
         return this.tasks.filter(task => {
-            if (!task.completed || !task.completedTime) {
+            // 如果任务未完成，直接排除
+            if (!task.completed) {
                 return false;
             }
 
-            const completedDate = new Date(task.completedTime);
+            // 检查完成时间字段（可能的字段名）
+            let completedTime = task.completedTime || task.completeTime || task.完成时间;
+
+            // 如果没有完成时间，但任务已完成，使用创建时间作为备选
+            if (!completedTime && task.createTime) {
+                completedTime = task.createTime;
+            }
+
+            if (!completedTime) {
+                return false;
+            }
+
+            const completedDate = new Date(completedTime);
             return completedDate >= startOfWeek && completedDate < endOfWeek;
         });
     }
