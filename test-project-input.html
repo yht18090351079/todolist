@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>项目输入控件测试</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div style="max-width: 600px; margin: 2rem auto; padding: 2rem; background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+        <h1>🧪 项目输入控件测试</h1>
+        
+        <div class="form-group">
+            <label for="taskProject">所属项目</label>
+            <div class="project-input-container">
+                <select id="taskProjectSelect" class="form-input project-select">
+                    <option value="">选择已有项目...</option>
+                    <option value="新疆电网二期">新疆电网二期</option>
+                    <option value="地灾预警">地灾预警</option>
+                    <option value="新建电网二期">新建电网二期</option>
+                </select>
+                <input type="text" id="taskProject" class="form-input project-input" 
+                       placeholder="或输入新项目名称" required>
+                <button type="button" class="btn-toggle-input" id="toggleProjectInput" 
+                        title="切换输入方式">
+                    <i class="fas fa-edit"></i>
+                </button>
+            </div>
+            <div class="project-input-hint">
+                <small>💡 选择已有项目或输入新项目名称</small>
+            </div>
+        </div>
+
+        <div style="margin-top: 2rem; padding: 1rem; background: #f8f9fa; border-radius: 8px;">
+            <h3>测试说明：</h3>
+            <ul>
+                <li>默认显示项目选择下拉框</li>
+                <li>点击编辑按钮切换到输入模式</li>
+                <li>选择项目时会自动同步到输入框</li>
+                <li>在输入框输入时会清除选择</li>
+                <li>支持输入新项目名称</li>
+            </ul>
+        </div>
+
+        <div style="margin-top: 1rem; padding: 1rem; background: #e3f2fd; border-radius: 8px;">
+            <h4>当前值：</h4>
+            <p>选择框值: <span id="selectValue">无</span></p>
+            <p>输入框值: <span id="inputValue">无</span></p>
+            <p>当前模式: <span id="currentMode">选择模式</span></p>
+        </div>
+    </div>
+
+    <script>
+        // 初始化项目输入控件
+        function initProjectInput() {
+            const container = document.querySelector('.project-input-container');
+            const projectSelect = document.getElementById('taskProjectSelect');
+            const projectInput = document.getElementById('taskProject');
+            const toggleBtn = document.getElementById('toggleProjectInput');
+            
+            // 设置初始状态为选择模式
+            container.classList.add('select-mode');
+            updateDisplay();
+            
+            // 切换输入方式
+            toggleBtn.addEventListener('click', () => {
+                if (container.classList.contains('select-mode')) {
+                    // 切换到输入模式
+                    container.classList.remove('select-mode');
+                    container.classList.add('input-mode');
+                    projectInput.focus();
+                    toggleBtn.title = '切换到选择模式';
+                } else {
+                    // 切换到选择模式
+                    container.classList.remove('input-mode');
+                    container.classList.add('select-mode');
+                    projectSelect.focus();
+                    toggleBtn.title = '切换到输入模式';
+                }
+                updateDisplay();
+            });
+            
+            // 项目选择变化时同步到输入框
+            projectSelect.addEventListener('change', () => {
+                if (projectSelect.value) {
+                    projectInput.value = projectSelect.value;
+                }
+                updateDisplay();
+            });
+            
+            // 输入框变化时清除选择
+            projectInput.addEventListener('input', () => {
+                projectSelect.value = '';
+                updateDisplay();
+            });
+        }
+
+        // 更新显示
+        function updateDisplay() {
+            const container = document.querySelector('.project-input-container');
+            const projectSelect = document.getElementById('taskProjectSelect');
+            const projectInput = document.getElementById('taskProject');
+            
+            document.getElementById('selectValue').textContent = projectSelect.value || '无';
+            document.getElementById('inputValue').textContent = projectInput.value || '无';
+            document.getElementById('currentMode').textContent = 
+                container.classList.contains('select-mode') ? '选择模式' : '输入模式';
+        }
+
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', initProjectInput);
+    </script>
+</body>
+</html>
