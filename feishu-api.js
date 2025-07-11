@@ -17,32 +17,10 @@ class FeishuTaskAPI {
     // 获取任务记录
     async getTasks() {
         try {
-            if (this.useProxy) {
-                return await this.getTasksViaProxy();
-            } else {
-                return await this.getTasksDirect();
-            }
-        } catch (error) {
-            console.error('❌ 获取飞书任务记录失败:', error);
-            return { success: false, error: error.message };
-        }
-    }
-
-    // 通过代理获取任务
-    async getTasksViaProxy() {
-        try {
-            console.log('通过代理获取任务数据...');
-            console.log('代理URL:', this.proxyUrl);
+            console.log('从代理服务器获取任务数据...');
 
             const response = await fetch(`${this.proxyUrl}/tasks`);
-
-            if (!response.ok) {
-                console.log('代理服务器响应状态:', response.status, response.statusText);
-                throw new Error(`代理服务器错误: ${response.status} ${response.statusText}`);
-            }
-
             const result = await response.json();
-            console.log('代理服务器响应:', result);
 
             if (result.success) {
                 console.log('✅ 获取任务记录成功，共', result.tasks.length, '条');
@@ -54,8 +32,7 @@ class FeishuTaskAPI {
                 throw new Error(result.message || '获取任务失败');
             }
         } catch (error) {
-            console.error('❌ 代理获取任务失败:', error);
-            console.log('代理失败，返回本地备用数据...');
+            console.error('❌ 获取任务失败:', error);
 
             // 返回本地备用数据
             const fallbackTasks = [
@@ -112,7 +89,7 @@ class FeishuTaskAPI {
             ];
 
             console.log('✅ 使用本地备用数据，共', fallbackTasks.length, '条');
-            return { success: true, tasks: fallbackTasks, source: 'local_fallback' };
+            return { success: true, tasks: fallbackTasks, source: 'local_fallback', error: error.message };
         }
     }
 
@@ -121,17 +98,8 @@ class FeishuTaskAPI {
     // 创建新任务
     async createTask(taskData) {
         try {
-            return await this.createTaskViaProxy(taskData);
-        } catch (error) {
-            console.error('❌ 创建飞书任务失败:', error);
-            return { success: false, error: error.message };
-        }
-    }
-
-    // 通过代理创建任务
-    async createTaskViaProxy(taskData) {
-        try {
-            console.log('通过代理创建新任务:', taskData);
+            console.log('开始创建新任务到飞书...');
+            console.log('任务数据:', JSON.stringify(taskData, null, 2));
 
             const response = await fetch(`${this.proxyUrl}/create-task`, {
                 method: 'POST',
@@ -141,21 +109,18 @@ class FeishuTaskAPI {
                 body: JSON.stringify(taskData)
             });
 
-            if (!response.ok) {
-                throw new Error(`代理服务器错误: ${response.status} ${response.statusText}`);
-            }
-
             const result = await response.json();
 
             if (result.success) {
                 console.log('✅ 任务创建成功');
+                console.log('记录ID:', result.data?.records?.[0]?.record_id);
                 return { success: true, data: result.data };
             } else {
                 throw new Error(result.message || '创建任务失败');
             }
         } catch (error) {
-            console.error('❌ 代理创建任务失败:', error);
-            return { success: false, error: `后端服务不可用: ${error.message}` };
+            console.error('❌ 创建任务失败:', error);
+            return { success: false, error: error.message };
         }
     }
 
