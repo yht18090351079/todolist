@@ -4,6 +4,7 @@ class TaskManager {
         this.tasks = [];
         this.projects = [];
         this.currentView = 'list';
+        this.currentProject = ''; // 当前选中的项目
         this.filters = {
             project: '',
             status: ['true', 'false'], // 完成状态
@@ -287,21 +288,21 @@ class TaskManager {
     // 切换视图
     switchView(view) {
         this.currentView = view;
-        
+
         // 更新按钮状态
         document.querySelectorAll('[data-view]').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.view === view);
         });
-        
+
         // 显示/隐藏视图
         document.getElementById('listView').style.display = view === 'list' ? 'block' : 'none';
-        document.getElementById('kanbanView').style.display = view === 'kanban' ? 'block' : 'none';
-        
+        document.getElementById('tabsView').style.display = view === 'tabs' ? 'block' : 'none';
+
         // 渲染对应视图
         if (view === 'list') {
             this.renderListView();
-        } else {
-            this.renderKanbanView();
+        } else if (view === 'tabs') {
+            this.renderTabsView();
         }
     }
 
@@ -309,8 +310,8 @@ class TaskManager {
     renderTasks() {
         if (this.currentView === 'list') {
             this.renderListView();
-        } else {
-            this.renderKanbanView();
+        } else if (this.currentView === 'tabs') {
+            this.renderTabsView();
         }
     }
 
@@ -376,11 +377,10 @@ class TaskManager {
         });
     }
 
-    // 渲染看板视图
-    renderKanbanView() {
+    // 渲染项目标签页视图
+    renderTabsView() {
         const filteredTasks = this.filterTasks();
-        const kanbanBoard = document.getElementById('kanbanBoard');
-        
+
         // 按项目分组
         const tasksByProject = {};
         filteredTasks.forEach(task => {
@@ -390,59 +390,225 @@ class TaskManager {
             }
             tasksByProject[project].push(task);
         });
-        
-        kanbanBoard.innerHTML = Object.entries(tasksByProject).map(([project, tasks]) => {
-            const completedCount = tasks.filter(t => t.completed).length;
-            const totalCount = tasks.length;
-            const completionRate = totalCount > 0 ? Math.round(completedCount / totalCount * 100) : 0;
-            
+
+        const projects = Object.keys(tasksByProject);
+
+        // 如果没有当前项目或当前项目不存在，选择第一个项目
+        if (!this.currentProject || !projects.includes(this.currentProject)) {
+            this.currentProject = projects[0] || '';
+        }
+
+        // 渲染项目标签页
+        this.renderProjectTabs(projects);
+
+        // 渲染当前项目的内容
+        if (this.currentProject && tasksByProject[this.currentProject]) {
+            this.renderProjectContent(this.currentProject, tasksByProject[this.currentProject]);
+        }
+    }
+
+    // 渲染项目标签页导航
+    renderProjectTabs(projects) {
+        const projectTabs = document.getElementById('projectTabs');
+
+        if (projects.length === 0) {
+            projectTabs.innerHTML = '<div class="no-projects">暂无项目数据</div>';
+            return;
+        }
+
+        projectTabs.innerHTML = projects.map(project => {
+            const isActive = project === this.currentProject;
+            const projectTasks = this.tasks.filter(task => (task.project || '未分类') === project);
+            const completedCount = projectTasks.filter(t => t.completed).length;
+            const totalCount = projectTasks.length;
+            const urgentCount = projectTasks.filter(task =>
+                !task.completed && this.getTaskPriority(task) === 'urgent'
+            ).length;
+
             return `
-                <div class="kanban-column">
-                    <h3 class="column-header">
-                        ${project}
-                        <small>(${completedCount}/${totalCount} - ${completionRate}%)</small>
-                    </h3>
-                    <div class="kanban-tasks">
-                        ${tasks.map(task => {
-                            const priority = this.getTaskPriority(task);
-                            const priorityDisplay = this.getPriorityDisplay(priority);
-                            const dueDate = task.dueDate ? new Date(task.dueDate).toLocaleDateString() : '未设定';
-                            
-                            return `
-                                <div class="kanban-task" data-task-id="${task.id}">
-                                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
-                                        <div class="task-title" style="font-size: 0.875rem; font-weight: 600;">${task.title}</div>
-                                        <span class="status-badge ${task.completed ? 'status-completed' : 'status-pending'}" style="font-size: 0.625rem;">
-                                            ${task.completed ? '✓' : '○'}
-                                        </span>
-                                    </div>
-                                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: #718096;">
-                                        <span>${task.assignee || '未指定'}</span>
-                                        <span class="priority-badge ${priorityDisplay.class}" style="font-size: 0.625rem;">
-                                            ${priorityDisplay.text}
-                                        </span>
-                                    </div>
-                                    <div style="font-size: 0.75rem; color: #718096; margin-top: 0.25rem;">
-                                        <i class="fas fa-calendar"></i> ${dueDate}
-                                    </div>
-                                </div>
-                            `;
-                        }).join('')}
+                <div class="project-tab ${isActive ? 'active' : ''}" data-project="${project}">
+                    <div class="tab-header">
+                        <i class="fas fa-folder${isActive ? '-open' : ''}"></i>
+                        <span class="tab-title">${project}</span>
+                        ${urgentCount > 0 ? `<span class="urgent-badge">${urgentCount}</span>` : ''}
+                    </div>
+                    <div class="tab-stats">
+                        <span class="tab-progress">${completedCount}/${totalCount}</span>
+                        <div class="tab-progress-bar">
+                            <div class="tab-progress-fill" style="width: ${totalCount > 0 ? (completedCount / totalCount * 100) : 0}%"></div>
+                        </div>
                     </div>
                 </div>
             `;
         }).join('');
-        
-        // 绑定点击事件
-        kanbanBoard.querySelectorAll('.kanban-task').forEach(item => {
-            item.addEventListener('click', () => {
-                const taskId = item.dataset.taskId;
-                const task = this.tasks.find(t => t.id === taskId);
-                if (task) {
-                    this.editTask(task);
-                }
+
+        // 绑定标签页点击事件
+        projectTabs.querySelectorAll('.project-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                const project = tab.dataset.project;
+                this.switchToProject(project);
             });
         });
+    }
+
+    // 渲染项目内容
+    renderProjectContent(project, tasks) {
+        const projectHeader = document.getElementById('projectHeader');
+        const projectTasksList = document.getElementById('projectTasksList');
+
+        // 统计信息
+        const completedCount = tasks.filter(t => t.completed).length;
+        const totalCount = tasks.length;
+        const completionRate = totalCount > 0 ? Math.round(completedCount / totalCount * 100) : 0;
+        const urgentTasks = tasks.filter(task => !task.completed && this.getTaskPriority(task) === 'urgent');
+        const overdueTasks = tasks.filter(task => !task.completed && this.getTaskPriority(task) === 'overdue');
+
+        // 渲染项目头部
+        projectHeader.innerHTML = `
+            <div class="project-info">
+                <h2 class="project-name">
+                    <i class="fas fa-folder-open"></i>
+                    ${project}
+                </h2>
+                <div class="project-summary">
+                    <div class="summary-stats">
+                        <div class="stat-card">
+                            <div class="stat-number">${totalCount}</div>
+                            <div class="stat-label">总任务</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">${completedCount}</div>
+                            <div class="stat-label">已完成</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">${completionRate}%</div>
+                            <div class="stat-label">完成率</div>
+                        </div>
+                        ${urgentTasks.length > 0 ? `
+                        <div class="stat-card urgent">
+                            <div class="stat-number">${urgentTasks.length}</div>
+                            <div class="stat-label">紧急</div>
+                        </div>
+                        ` : ''}
+                        ${overdueTasks.length > 0 ? `
+                        <div class="stat-card overdue">
+                            <div class="stat-number">${overdueTasks.length}</div>
+                            <div class="stat-label">逾期</div>
+                        </div>
+                        ` : ''}
+                    </div>
+                    <div class="project-progress-large">
+                        <div class="progress-bar-large">
+                            <div class="progress-fill-large" style="width: ${completionRate}%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="project-actions">
+                <button class="btn btn-primary" onclick="taskManager.addTaskToProject('${project}')">
+                    <i class="fas fa-plus"></i>
+                    新增任务
+                </button>
+            </div>
+        `;
+
+        // 渲染任务列表
+        if (tasks.length === 0) {
+            projectTasksList.innerHTML = `
+                <div class="empty-project">
+                    <i class="fas fa-clipboard-list"></i>
+                    <h3>暂无任务</h3>
+                    <p>点击"新增任务"开始添加任务</p>
+                </div>
+            `;
+        } else {
+            // 按状态分组显示任务
+            const pendingTasks = tasks.filter(t => !t.completed);
+            const completedTasks = tasks.filter(t => t.completed);
+
+            projectTasksList.innerHTML = `
+                ${pendingTasks.length > 0 ? `
+                <div class="task-group">
+                    <h3 class="group-title">
+                        <i class="fas fa-clock"></i>
+                        进行中的任务 (${pendingTasks.length})
+                    </h3>
+                    <div class="task-group-list">
+                        ${pendingTasks.map(task => this.renderProjectTask(task)).join('')}
+                    </div>
+                </div>
+                ` : ''}
+
+                ${completedTasks.length > 0 ? `
+                <div class="task-group">
+                    <h3 class="group-title">
+                        <i class="fas fa-check-circle"></i>
+                        已完成的任务 (${completedTasks.length})
+                    </h3>
+                    <div class="task-group-list">
+                        ${completedTasks.map(task => this.renderProjectTask(task)).join('')}
+                    </div>
+                </div>
+                ` : ''}
+            `;
+
+            // 绑定任务点击事件
+            projectTasksList.querySelectorAll('.project-task').forEach(item => {
+                item.addEventListener('click', () => {
+                    const taskId = item.dataset.taskId;
+                    const task = this.tasks.find(t => t.id === taskId);
+                    if (task) {
+                        this.editTask(task);
+                    }
+                });
+            });
+        }
+    }
+
+    // 渲染单个项目任务
+    renderProjectTask(task) {
+        const priority = this.getTaskPriority(task);
+        const priorityDisplay = this.getPriorityDisplay(priority);
+        const dueDate = task.dueDate ? new Date(task.dueDate).toLocaleDateString() : '未设定';
+
+        return `
+            <div class="project-task ${task.completed ? 'completed' : ''}" data-task-id="${task.id}">
+                <div class="task-main">
+                    <div class="task-checkbox">
+                        <i class="fas ${task.completed ? 'fa-check-circle' : 'fa-circle'}"></i>
+                    </div>
+                    <div class="task-content">
+                        <div class="task-title">${task.title}</div>
+                        <div class="task-details">
+                            <span class="task-assignee">
+                                <i class="fas fa-user"></i>
+                                ${task.assignee || '未指定'}
+                            </span>
+                            <span class="task-due">
+                                <i class="fas fa-calendar"></i>
+                                ${dueDate}
+                            </span>
+                            <span class="priority-badge ${priorityDisplay.class}">
+                                ${priorityDisplay.text}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // 切换到指定项目
+    switchToProject(project) {
+        this.currentProject = project;
+        this.renderTabsView();
+    }
+
+    // 为特定项目添加任务
+    addTaskToProject(project) {
+        this.showTaskModal();
+        // 预填项目名称
+        document.getElementById('taskProject').value = project;
     }
 
     // 显示任务模态框

@@ -89,9 +89,9 @@
                                 <i class="fas fa-list"></i>
                                 列表视图
                             </button>
-                            <button class="btn btn-outline" data-view="kanban">
-                                <i class="fas fa-columns"></i>
-                                项目视图
+                            <button class="btn btn-outline" data-view="tabs">
+                                <i class="fas fa-folder-open"></i>
+                                项目标签页
                             </button>
                         </div>
                     </div>
@@ -108,10 +108,21 @@
                     </div>
                 </div>
 
-                <!-- 项目看板视图 -->
-                <div id="kanbanView" class="kanban-view" style="display: none;">
-                    <div class="kanban-board" id="kanbanBoard">
-                        <!-- 项目列将通过JavaScript动态生成 -->
+                <!-- 项目标签页视图 -->
+                <div id="tabsView" class="tabs-view" style="display: none;">
+                    <!-- 项目标签页导航 -->
+                    <div class="project-tabs" id="projectTabs">
+                        <!-- 项目标签将通过JavaScript动态生成 -->
+                    </div>
+
+                    <!-- 当前项目的任务列表 -->
+                    <div class="project-content" id="projectContent">
+                        <div class="project-header" id="projectHeader">
+                            <!-- 项目信息将通过JavaScript动态生成 -->
+                        </div>
+                        <div class="project-tasks-list" id="projectTasksList">
+                            <!-- 项目任务将通过JavaScript动态生成 -->
+                        </div>
                     </div>
                 </div>
             </section>
