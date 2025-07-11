@@ -527,16 +527,19 @@ class TaskManager {
             const dueDate = task.dueDate ? new Date(task.dueDate).toLocaleDateString() : '未设定';
             
             return `
-                <div class="task-item" data-task-id="${task.id}">
+                <div class="task-item ${task.completed ? 'completed' : ''}" data-task-id="${task.id}">
                     <div class="task-item-header">
-                        <div>
-                            <div class="task-title">${task.title}</div>
-                            <div class="task-project">${task.project}</div>
+                        <div class="task-checkbox-container">
+                            <input type="checkbox" class="task-checkbox"
+                                   ${task.completed ? 'checked' : ''}
+                                   data-task-id="${task.id}"
+                                   onclick="event.stopPropagation()">
+                            <div class="task-info">
+                                <div class="task-title">${task.title}</div>
+                                <div class="task-project">${task.project}</div>
+                            </div>
                         </div>
                         <div style="display: flex; align-items: center; gap: 0.5rem;">
-                            <span class="status-badge ${task.completed ? 'status-completed' : 'status-pending'}">
-                                ${task.completed ? '已完成' : '未完成'}
-                            </span>
                             <span class="priority-badge ${priorityDisplay.class}">
                                 ${priorityDisplay.text}
                             </span>
@@ -564,6 +567,19 @@ class TaskManager {
                 if (task) {
                     this.editTask(task);
                 }
+            });
+        });
+
+        // 绑定复选框事件
+        taskList.querySelectorAll('.task-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', async (e) => {
+                const taskId = e.target.dataset.taskId;
+                const completed = e.target.checked;
+
+                console.log('任务状态变更:', taskId, completed ? '完成' : '未完成');
+
+                // 更新任务状态
+                await this.toggleTaskCompletion(taskId, completed);
             });
         });
     }
@@ -753,6 +769,19 @@ class TaskManager {
                     }
                 });
             });
+
+            // 绑定项目任务复选框事件
+            projectTasksList.querySelectorAll('.project-task-checkbox').forEach(checkbox => {
+                checkbox.addEventListener('change', async (e) => {
+                    const taskId = e.target.dataset.taskId;
+                    const completed = e.target.checked;
+
+                    console.log('项目任务状态变更:', taskId, completed ? '完成' : '未完成');
+
+                    // 更新任务状态
+                    await this.toggleTaskCompletion(taskId, completed);
+                });
+            });
         }
     }
 
@@ -765,8 +794,11 @@ class TaskManager {
         return `
             <div class="project-task ${task.completed ? 'completed' : ''}" data-task-id="${task.id}">
                 <div class="task-main">
-                    <div class="task-checkbox">
-                        <i class="fas ${task.completed ? 'fa-check-circle' : 'fa-circle'}"></i>
+                    <div class="task-checkbox-container">
+                        <input type="checkbox" class="task-checkbox project-task-checkbox"
+                               ${task.completed ? 'checked' : ''}
+                               data-task-id="${task.id}"
+                               onclick="event.stopPropagation()">
                     </div>
                     <div class="task-content">
                         <div class="task-title">${task.title}</div>
@@ -793,6 +825,90 @@ class TaskManager {
     switchToProject(project) {
         this.currentProject = project;
         this.renderTabsView();
+    }
+
+    // 切换任务完成状态
+    async toggleTaskCompletion(taskId, completed) {
+        try {
+            // 显示加载状态
+            this.showLoading(true);
+
+            // 找到任务
+            const task = this.tasks.find(t => t.id === taskId);
+            if (!task) {
+                throw new Error('任务不存在');
+            }
+
+            console.log('更新任务完成状态:', taskId, completed);
+
+            // 调用API更新任务状态
+            const result = await window.feishuTaskAPI.updateTask(taskId, {
+                title: task.title,
+                project: task.project,
+                assignee: task.assignee,
+                dueDate: task.dueDate,
+                completed: completed
+            });
+
+            if (result.success) {
+                // 更新本地数据
+                task.completed = completed;
+
+                // 重新渲染界面
+                this.renderTasks();
+
+                console.log('✅ 任务状态更新成功');
+
+                // 显示成功提示
+                this.showSuccessMessage(completed ? '任务已标记为完成' : '任务已标记为未完成');
+            } else {
+                throw new Error(result.error || '更新任务状态失败');
+            }
+
+        } catch (error) {
+            console.error('❌ 更新任务状态失败:', error);
+
+            // 恢复复选框状态
+            const checkbox = document.querySelector(`[data-task-id="${taskId}"].task-checkbox`);
+            if (checkbox) {
+                checkbox.checked = !completed;
+            }
+
+            this.showError('更新任务状态失败: ' + error.message);
+        } finally {
+            this.showLoading(false);
+        }
+    }
+
+    // 显示成功消息
+    showSuccessMessage(message) {
+        const successBar = document.createElement('div');
+        successBar.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: #48bb78;
+            color: white;
+            padding: 1rem;
+            text-align: center;
+            z-index: 1000;
+            font-size: 0.875rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        `;
+        successBar.innerHTML = `
+            <i class="fas fa-check-circle"></i>
+            ${message}
+        `;
+
+        document.body.insertBefore(successBar, document.body.firstChild);
+
+        // 3秒后自动隐藏
+        setTimeout(() => {
+            if (successBar.parentElement) {
+                successBar.remove();
+            }
+        }, 3000);
     }
 
     // 为特定项目添加任务
@@ -838,7 +954,6 @@ class TaskManager {
             document.getElementById('taskTitle').value = task.title;
             document.getElementById('taskAssignee').value = task.assignee || '';
             document.getElementById('taskDueDate').value = task.dueDate || '';
-            document.getElementById('taskCompleted').checked = task.completed;
 
             // 处理项目字段
             if (task.project) {
@@ -897,7 +1012,7 @@ class TaskManager {
             project: document.getElementById('taskProject').value.trim(),
             assignee: document.getElementById('taskAssignee').value.trim(),
             dueDate: document.getElementById('taskDueDate').value,
-            completed: document.getElementById('taskCompleted').checked
+            completed: this.currentEditingTask ? this.currentEditingTask.completed : false
         };
         
         // 验证必填字段

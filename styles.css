@@ -757,6 +757,52 @@ body {
     font-size: 0.75rem;
 }
 
+/* 任务复选框样式 */
+.task-checkbox-container {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+}
+
+.task-checkbox {
+    width: 1.25rem;
+    height: 1.25rem;
+    margin: 0;
+    cursor: pointer;
+    accent-color: #48bb78;
+    flex-shrink: 0;
+    margin-top: 0.125rem;
+}
+
+.task-info {
+    flex: 1;
+}
+
+/* 已完成任务的样式 */
+.task-item.completed {
+    opacity: 0.7;
+}
+
+.task-item.completed .task-title {
+    text-decoration: line-through;
+    color: #718096;
+}
+
+.project-task.completed .task-title {
+    text-decoration: line-through;
+    color: #718096;
+}
+
+/* 项目任务复选框 */
+.project-task-checkbox {
+    width: 1.125rem;
+    height: 1.125rem;
+    margin: 0;
+    cursor: pointer;
+    accent-color: #48bb78;
+    margin-top: 0.125rem;
+}
+
 /* 项目输入组合控件 */
 .project-input-container {
     position: relative;
