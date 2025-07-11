@@ -187,4 +187,4 @@ class FeishuTaskAPI {
 
 // 创建全局实例
 window.feishuTaskAPI = new FeishuTaskAPI();
-console.log('✅ 飞书任务管理API模块已加载');
+console.log('✅ 飞书任务管理API代理模块已加载');

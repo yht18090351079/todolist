@@ -234,7 +234,7 @@ class TaskManager {
         helpModal.innerHTML = `
             <div class="modal-content">
                 <div class="modal-header">
-                    <h2>🔧 服务器连接问题</h2>
+                    <h2>🔧 后端服务连接问题</h2>
                     <button class="modal-close" onclick="this.closest('.modal').remove()">
                         <i class="fas fa-times"></i>
                     </button>
@@ -242,32 +242,38 @@ class TaskManager {
                 <div class="modal-body">
                     <div style="background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
                         <h3 style="color: #721c24; margin-bottom: 0.5rem;">后端服务暂时不可用</h3>
-                        <p style="color: #721c24; margin: 0;">Netlify Functions 服务遇到问题，系统将使用本地备用数据。</p>
+                        <p style="color: #721c24; margin: 0;">Netlify Functions 服务遇到问题，系统正在使用本地备用数据。</p>
                     </div>
 
-                    <h3>当前状态：</h3>
+                    <h3>当前功能状态：</h3>
                     <ul style="line-height: 1.8;">
-                        <li>✅ 可以查看任务（使用备用数据）</li>
-                        <li>❌ 无法保存新任务到飞书</li>
-                        <li>❌ 无法更新任务状态</li>
-                        <li>✅ 可以生成AI报告</li>
+                        <li>✅ 查看任务列表（使用备用数据）</li>
+                        <li>✅ 项目标签页切换</li>
+                        <li>✅ 任务筛选和搜索</li>
+                        <li>✅ 生成AI报告</li>
+                        <li>❌ 保存新任务到飞书</li>
+                        <li>❌ 更新任务状态</li>
                     </ul>
 
-                    <h3>解决方案：</h3>
+                    <h3>可能的原因：</h3>
+                    <ul style="line-height: 1.8;">
+                        <li>Netlify Functions 服务正在重启</li>
+                        <li>后端代理配置问题</li>
+                        <li>飞书API访问限制</li>
+                        <li>网络连接问题</li>
+                    </ul>
+
+                    <h3>建议操作：</h3>
                     <ol style="line-height: 1.8;">
-                        <li><strong>激活CORS代理</strong>（推荐）：<br>
-                            <a href="https://cors-anywhere.herokuapp.com/corsdemo" target="_blank"
-                               style="color: #667eea; text-decoration: none; font-weight: 600;">
-                               点击这里激活CORS代理服务
-                            </a>
-                        </li>
-                        <li><strong>等待服务恢复</strong>：后端服务可能正在重启</li>
+                        <li><strong>等待几分钟</strong>：服务通常会自动恢复</li>
+                        <li><strong>刷新页面</strong>：重新检查连接状态</li>
+                        <li><strong>检查网络</strong>：确认网络连接正常</li>
                         <li><strong>联系管理员</strong>：如果问题持续存在</li>
                     </ol>
 
                     <div style="background: #d1ecf1; border: 1px solid #bee5eb; border-radius: 8px; padding: 1rem; margin-top: 1rem;">
-                        <h4 style="color: #0c5460; margin-bottom: 0.5rem;">💡 临时解决方案</h4>
-                        <p style="color: #0c5460; margin: 0;">激活CORS代理后，系统会自动切换到直连模式，可以正常保存和更新任务。</p>
+                        <h4 style="color: #0c5460; margin-bottom: 0.5rem;">💡 温馨提示</h4>
+                        <p style="color: #0c5460; margin: 0;">您仍然可以使用系统查看任务、切换项目和生成报告。数据保存功能会在服务恢复后自动可用。</p>
                     </div>
 
                     <details style="margin-top: 1rem;">
@@ -276,9 +282,9 @@ class TaskManager {
                     </details>
                 </div>
                 <div class="modal-footer">
-                    <button class="btn btn-primary" onclick="window.open('https://cors-anywhere.herokuapp.com/corsdemo', '_blank')">
-                        <i class="fas fa-external-link-alt"></i>
-                        激活CORS代理
+                    <button class="btn btn-primary" onclick="window.location.reload()">
+                        <i class="fas fa-sync-alt"></i>
+                        刷新页面
                     </button>
                     <button class="btn btn-secondary" onclick="this.closest('.modal').remove()">
                         我知道了
