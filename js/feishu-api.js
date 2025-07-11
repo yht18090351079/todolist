@@ -3,6 +3,67 @@ class FeishuAPI {
     constructor() {
         this.accessToken = null;
         this.tokenExpiry = 0;
+        this.isNetlify = CONFIG.FEISHU.BASE_URL.includes('.netlify');
+    }
+
+    // 通用API调用方法
+    async callAPI(apiPath, method = 'GET', data = null, needAuth = true) {
+        try {
+            let response;
+
+            if (this.isNetlify) {
+                // Netlify Functions调用方式
+                const requestBody = {
+                    apiPath: apiPath,
+                    method: method
+                };
+
+                if (data) {
+                    requestBody.data = data;
+                }
+
+                const headers = {
+                    'Content-Type': 'application/json'
+                };
+
+                if (needAuth) {
+                    const token = await this.getAccessToken();
+                    headers['Authorization'] = `Bearer ${token}`;
+                }
+
+                response = await fetch(CONFIG.FEISHU.BASE_URL, {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify(requestBody)
+                });
+            } else {
+                // 本地开发环境调用方式
+                const headers = {
+                    'Content-Type': 'application/json'
+                };
+
+                if (needAuth) {
+                    const token = await this.getAccessToken();
+                    headers['Authorization'] = `Bearer ${token}`;
+                }
+
+                const requestOptions = {
+                    method: method,
+                    headers: headers
+                };
+
+                if (data && method !== 'GET') {
+                    requestOptions.body = JSON.stringify(data);
+                }
+
+                response = await fetch(`${CONFIG.FEISHU.BASE_URL}${apiPath}`, requestOptions);
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('API调用失败:', error);
+            throw error;
+        }
     }
 
     // 获取访问令牌
@@ -12,7 +73,7 @@ class FeishuAPI {
         }
 
         try {
-            const response = await fetch(`${CONFIG.FEISHU.BASE_URL}/auth/v3/tenant_access_token/internal`, {
+            const response = await fetch(CONFIG.FEISHU.TOKEN_URL, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -41,20 +102,24 @@ class FeishuAPI {
     // 获取多维表格记录
     async getRecords(pageSize = 100, pageToken = '') {
         const token = await this.getAccessToken();
-        const url = `${CONFIG.FEISHU.BASE_URL}/bitable/v1/apps/${CONFIG.FEISHU.BITABLE_ID}/tables/${CONFIG.FEISHU.TABLE_ID}/records`;
-        
         const params = new URLSearchParams({
             page_size: pageSize.toString(),
             ...(pageToken && { page_token: pageToken })
         });
 
+        const apiPath = `/bitable/v1/apps/${CONFIG.FEISHU.BITABLE_ID}/tables/${CONFIG.FEISHU.TABLE_ID}/records?${params}`;
+
         try {
-            const response = await fetch(`${url}?${params}`, {
-                method: 'GET',
+            const response = await fetch(CONFIG.FEISHU.API_URL, {
+                method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    apiPath: apiPath,
+                    method: 'GET'
+                })
             });
 
             const data = await response.json();

@@ -20,13 +20,31 @@ exports.handler = async (event, context) => {
   }
 
   try {
-    // 从路径中提取API路径
-    const apiPath = event.path.replace('/.netlify/functions/feishu-proxy', '');
+    // 解析请求体以获取API路径和参数
+    let requestData = {};
+    if (event.body) {
+      try {
+        requestData = JSON.parse(event.body);
+      } catch (e) {
+        console.log('无法解析请求体，使用空对象');
+      }
+    }
+
+    // 从请求体中获取API路径，如果没有则从查询参数获取
+    let apiPath = requestData.apiPath || (event.queryStringParameters && event.queryStringParameters.path) || '';
+
+    // 如果还是没有路径，尝试从URL路径提取
+    if (!apiPath && event.path) {
+      apiPath = event.path.replace('/.netlify/functions/feishu-proxy', '');
+    }
+
     const feishuUrl = `https://open.feishu.cn/open-apis${apiPath}`;
-    
+
+    console.log('原始路径:', event.path);
+    console.log('提取的API路径:', apiPath);
     console.log('代理请求到:', feishuUrl);
     console.log('请求方法:', event.httpMethod);
-    console.log('请求体:', event.body);
+    console.log('请求数据:', requestData);
 
     // 构建请求选项
     const requestOptions = {
@@ -41,13 +59,42 @@ exports.handler = async (event, context) => {
       requestOptions.headers['Authorization'] = event.headers.authorization;
     }
 
-    // 添加请求体（如果存在）
-    if (event.body && event.httpMethod !== 'GET') {
-      requestOptions.body = event.body;
+    // 构建请求体
+    let requestBody = {};
+    if (requestData.app_id && requestData.app_secret) {
+      // 这是获取访问令牌的请求
+      requestBody = {
+        app_id: requestData.app_id,
+        app_secret: requestData.app_secret
+      };
+    } else if (requestData.data) {
+      // 其他API请求
+      requestBody = requestData.data;
     }
 
+    // 添加请求体（如果存在且不是GET请求）
+    if (Object.keys(requestBody).length > 0 && event.httpMethod !== 'GET') {
+      requestOptions.body = JSON.stringify(requestBody);
+    }
+
+    // 处理GET请求的查询参数
+    let finalUrl = feishuUrl;
+    if (event.httpMethod === 'GET' && event.queryStringParameters) {
+      const params = new URLSearchParams();
+      Object.keys(event.queryStringParameters).forEach(key => {
+        if (key !== 'path') { // 排除我们用于路径的参数
+          params.append(key, event.queryStringParameters[key]);
+        }
+      });
+      if (params.toString()) {
+        finalUrl += (finalUrl.includes('?') ? '&' : '?') + params.toString();
+      }
+    }
+
+    console.log('最终请求URL:', finalUrl);
+
     // 发送请求到飞书API
-    const response = await fetch(feishuUrl, requestOptions);
+    const response = await fetch(finalUrl, requestOptions);
     const data = await response.json();
 
     console.log('飞书API响应:', data);

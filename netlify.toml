@@ -10,12 +10,19 @@
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
 
-# API代理重定向规则
+# API代理重定向规则 - 飞书令牌
 [[redirects]]
-  from = "/api/feishu/*"
-  to = "/.netlify/functions/feishu-proxy/:splat"
+  from = "/api/feishu/auth/v3/tenant_access_token/internal"
+  to = "/.netlify/functions/feishu-token"
   status = 200
 
+# API代理重定向规则 - 飞书其他API
+[[redirects]]
+  from = "/api/feishu/*"
+  to = "/.netlify/functions/feishu-api"
+  status = 200
+
+# API代理重定向规则 - 豆包AI
 [[redirects]]
   from = "/api/doubao/*"
   to = "/.netlify/functions/doubao-proxy"

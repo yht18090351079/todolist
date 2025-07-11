@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API测试页面</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
+        .result { margin-top: 10px; padding: 10px; background: #f5f5f5; border-radius: 4px; }
+        .error { background: #ffebee; color: #c62828; }
+        .success { background: #e8f5e8; color: #2e7d32; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <h1>🧪 API测试页面</h1>
+    <p>用于测试Netlify Functions是否正常工作</p>
+
+    <div class="test-section">
+        <h3>1. 测试飞书访问令牌获取</h3>
+        <button onclick="testFeishuToken()">测试获取访问令牌</button>
+        <div id="tokenResult" class="result" style="display: none;"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>2. 测试飞书API调用</h3>
+        <button onclick="testFeishuAPI()">测试获取表格字段</button>
+        <div id="apiResult" class="result" style="display: none;"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>3. 测试豆包AI</h3>
+        <button onclick="testDoubaoAPI()">测试AI对话</button>
+        <div id="doubaoResult" class="result" style="display: none;"></div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script>
+        async function testFeishuToken() {
+            const resultDiv = document.getElementById('tokenResult');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '🔄 正在测试...';
+            resultDiv.className = 'result';
+
+            try {
+                const response = await fetch(CONFIG.FEISHU.TOKEN_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        app_id: CONFIG.FEISHU.APP_ID,
+                        app_secret: CONFIG.FEISHU.APP_SECRET
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.code === 0) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `✅ 成功获取访问令牌！<br>令牌: ${data.tenant_access_token.substring(0, 20)}...`;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `❌ 获取令牌失败: ${data.msg || '未知错误'}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `❌ 请求失败: ${error.message}`;
+            }
+        }
+
+        async function testFeishuAPI() {
+            const resultDiv = document.getElementById('apiResult');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '🔄 正在测试...';
+            resultDiv.className = 'result';
+
+            try {
+                // 先获取访问令牌
+                const tokenResponse = await fetch(CONFIG.FEISHU.TOKEN_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        app_id: CONFIG.FEISHU.APP_ID,
+                        app_secret: CONFIG.FEISHU.APP_SECRET
+                    })
+                });
+
+                const tokenData = await tokenResponse.json();
+                
+                if (tokenData.code !== 0) {
+                    throw new Error('无法获取访问令牌');
+                }
+
+                // 调用API获取表格字段
+                const apiResponse = await fetch(CONFIG.FEISHU.API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${tokenData.tenant_access_token}`
+                    },
+                    body: JSON.stringify({
+                        apiPath: `/bitable/v1/apps/${CONFIG.FEISHU.BITABLE_ID}/tables/${CONFIG.FEISHU.TABLE_ID}/fields`,
+                        method: 'GET'
+                    })
+                });
+
+                const apiData = await apiResponse.json();
+                
+                if (apiData.code === 0) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `✅ 成功获取表格字段！<br>字段数量: ${apiData.data.items.length}`;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `❌ API调用失败: ${apiData.msg || '未知错误'}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `❌ 请求失败: ${error.message}`;
+            }
+        }
+
+        async function testDoubaoAPI() {
+            const resultDiv = document.getElementById('doubaoResult');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '🔄 正在测试...';
+            resultDiv.className = 'result';
+
+            try {
+                const response = await fetch(CONFIG.DOUBAO.BASE_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        apiKey: CONFIG.DOUBAO.API_KEY,
+                        model: CONFIG.DOUBAO.MODEL,
+                        messages: [
+                            {
+                                role: 'user',
+                                content: '你好，请简单回复一下测试是否成功'
+                            }
+                        ]
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.choices && data.choices.length > 0) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `✅ 豆包AI响应成功！<br>回复: ${data.choices[0].message.content}`;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `❌ AI调用失败: ${JSON.stringify(data)}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `❌ 请求失败: ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -3,10 +3,13 @@ const CONFIG = {
     FEISHU: {
         APP_ID: 'cli_a8d4bd05dbf8100b',
         APP_SECRET: 'IRUdgTp1k825LXp1kz2W4gxcvaRAqtcv',
-        // 根据环境选择API端点
-        BASE_URL: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        // 使用专门的Netlify Functions
+        TOKEN_URL: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+            ? window.location.origin + '/api/feishu/auth/v3/tenant_access_token/internal'  // 本地开发
+            : '/.netlify/functions/feishu-token',     // Netlify部署
+        API_URL: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
             ? window.location.origin + '/api/feishu'  // 本地开发
-            : '/.netlify/functions/feishu-proxy',     // Netlify部署
+            : '/.netlify/functions/feishu-api',       // Netlify部署
         // 你的多维表格相关配置
         BITABLE_ID: 'DPIqbB7OWa05ZZsiQi8cP1jnnBb', // 从URL中提取
         TABLE_ID: 'tblAyK0L5R7iuKWz' // 从URL中提取
