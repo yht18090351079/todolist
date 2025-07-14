@@ -1297,6 +1297,24 @@ class TaskManager {
         typeWriter();
     }
 
+    // 测试周报筛选逻辑（调试用）
+    testWeeklyFilter() {
+        console.log('🧪 测试周报筛选逻辑...');
+
+        const today = new Date();
+        const { startOfWeek, endOfWeek } = window.doubaoAPI.getWeekRange(today);
+
+        console.log('📅 当前日期:', today.toLocaleDateString());
+        console.log('📊 本周范围:', startOfWeek, '到', endOfWeek);
+
+        const weeklyTasks = window.doubaoAPI.filterTasksByWeek(this.tasks, startOfWeek, endOfWeek);
+        console.log('✅ 筛选结果:', weeklyTasks.length, '个任务');
+
+        weeklyTasks.forEach(task => {
+            console.log(`  - ${task.title} (完成时间: ${task.completedTime || task.完成时间})`);
+        });
+    }
+
     // 复制报告
     copyReport() {
         const reportText = document.getElementById('reportText').textContent;

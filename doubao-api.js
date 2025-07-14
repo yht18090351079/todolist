@@ -282,21 +282,28 @@ class DoubaoAPI {
 
     // 筛选指定周完成的任务
     filterTasksByWeek(tasks, startOfWeek, endOfWeek) {
+        // 创建周开始和结束的时间点
         const start = new Date(startOfWeek);
-        const end = new Date(endOfWeek);
-        end.setDate(end.getDate() + 1); // 包含结束日期
+        start.setHours(0, 0, 0, 0);
 
-        console.log(`📊 筛选周范围: ${startOfWeek} - ${endOfWeek}`);
+        const end = new Date(endOfWeek);
+        end.setHours(23, 59, 59, 999);
+
+        console.log(`📊 筛选周范围: ${start.toLocaleString()} - ${end.toLocaleString()}`);
 
         return tasks.filter(task => {
             if (!task.completed) return false;
 
             let completedTime = task.completedTime || task.completeTime || task.完成时间;
-            if (!completedTime) return false;
+            if (!completedTime) {
+                console.log(`  ⚠️ 任务 "${task.title}" 没有完成时间`);
+                return false;
+            }
 
             let completedDate;
             if (typeof completedTime === 'number') {
                 completedDate = new Date(completedTime);
+                console.log(`  📅 解析时间戳: ${completedTime} → ${completedDate.toLocaleString()}`);
             } else if (typeof completedTime === 'string') {
                 completedDate = new Date(completedTime);
 
@@ -306,19 +313,24 @@ class DoubaoAPI {
                     if (match) {
                         const [, year, month, day, hour, minute, second] = match;
                         completedDate = new Date(year, month - 1, day, hour, minute, second);
+                        console.log(`  📅 解析中文格式: ${completedTime} → ${completedDate.toLocaleString()}`);
                     }
+                } else {
+                    console.log(`  📅 解析字符串: ${completedTime} → ${completedDate.toLocaleString()}`);
                 }
             } else {
+                console.log(`  ❌ 不支持的时间格式: ${typeof completedTime} - ${completedTime}`);
                 return false;
             }
 
-            if (isNaN(completedDate.getTime())) return false;
-
-            const isInRange = completedDate >= start && completedDate < end;
-
-            if (isInRange) {
-                console.log(`✅ 周报匹配任务: "${task.title}" 完成于 ${completedDate.toLocaleString()}`);
+            if (isNaN(completedDate.getTime())) {
+                console.log(`  ❌ 时间解析失败: ${completedTime}`);
+                return false;
             }
+
+            const isInRange = completedDate >= start && completedDate <= end;
+
+            console.log(`  🔍 任务 "${task.title}": ${completedDate.toLocaleString()} ${isInRange ? '✅ 在范围内' : '❌ 不在范围内'}`);
 
             return isInRange;
         });
@@ -328,12 +340,25 @@ class DoubaoAPI {
     getWeekRange(date) {
         const d = new Date(date);
         const day = d.getDay();
-        const diff = d.getDate() - day + (day === 0 ? -6 : 1); // 调整为周一开始
-        
-        const startOfWeek = new Date(d.setDate(diff));
+
+        // 计算本周一的日期（周一为一周的开始）
+        const mondayOffset = day === 0 ? -6 : 1 - day; // 如果是周日，往前推6天到周一
+
+        const startOfWeek = new Date(d);
+        startOfWeek.setDate(d.getDate() + mondayOffset);
+        startOfWeek.setHours(0, 0, 0, 0);
+
         const endOfWeek = new Date(startOfWeek);
         endOfWeek.setDate(startOfWeek.getDate() + 6);
-        
+        endOfWeek.setHours(23, 59, 59, 999);
+
+        console.log('📅 周范围计算详情:');
+        console.log('  输入日期:', d.toLocaleDateString());
+        console.log('  星期几:', day, '(0=周日, 1=周一, ..., 6=周六)');
+        console.log('  周一偏移:', mondayOffset);
+        console.log('  周开始:', startOfWeek.toLocaleDateString(), startOfWeek.toLocaleTimeString());
+        console.log('  周结束:', endOfWeek.toLocaleDateString(), endOfWeek.toLocaleTimeString());
+
         return {
             startOfWeek: startOfWeek.toISOString().split('T')[0],
             endOfWeek: endOfWeek.toISOString().split('T')[0]
