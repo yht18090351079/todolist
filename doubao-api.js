@@ -206,26 +206,52 @@ class DoubaoAPI {
         const startOfDay = new Date(target.getFullYear(), target.getMonth(), target.getDate());
         const endOfDay = new Date(target.getFullYear(), target.getMonth(), target.getDate() + 1);
 
+        console.log(`🔍 筛选日期: ${targetDate}, 范围: ${startOfDay.toLocaleString()} - ${endOfDay.toLocaleString()}`);
+
         return tasks.filter(task => {
             if (!task.completed) return false;
-            
-            // 检查完成时间字段
+
+            // 检查完成时间字段（支持多种格式）
             let completedTime = task.completedTime || task.completeTime || task.完成时间;
-            
-            if (!completedTime) return false;
-            
+
+            if (!completedTime) {
+                console.log(`⚠️ 任务 "${task.title}" 没有完成时间`);
+                return false;
+            }
+
             let completedDate;
             if (typeof completedTime === 'number') {
+                // 时间戳格式
                 completedDate = new Date(completedTime);
             } else if (typeof completedTime === 'string') {
+                // 字符串格式，尝试解析
                 completedDate = new Date(completedTime);
+
+                // 如果解析失败，尝试中文格式
+                if (isNaN(completedDate.getTime())) {
+                    // 处理中文格式：2025/07/14 02:33:00
+                    const match = completedTime.match(/(\d{4})\/(\d{2})\/(\d{2})\s+(\d{2}):(\d{2}):(\d{2})/);
+                    if (match) {
+                        const [, year, month, day, hour, minute, second] = match;
+                        completedDate = new Date(year, month - 1, day, hour, minute, second);
+                    }
+                }
             } else {
                 return false;
             }
-            
-            if (isNaN(completedDate.getTime())) return false;
-            
-            return completedDate >= startOfDay && completedDate < endOfDay;
+
+            if (isNaN(completedDate.getTime())) {
+                console.log(`❌ 任务 "${task.title}" 完成时间格式无效: ${completedTime}`);
+                return false;
+            }
+
+            const isInRange = completedDate >= startOfDay && completedDate < endOfDay;
+
+            if (isInRange) {
+                console.log(`✅ 找到匹配任务: "${task.title}" 完成于 ${completedDate.toLocaleString()}`);
+            }
+
+            return isInRange;
         });
     }
 
@@ -235,24 +261,41 @@ class DoubaoAPI {
         const end = new Date(endOfWeek);
         end.setDate(end.getDate() + 1); // 包含结束日期
 
+        console.log(`📊 筛选周范围: ${startOfWeek} - ${endOfWeek}`);
+
         return tasks.filter(task => {
             if (!task.completed) return false;
-            
+
             let completedTime = task.completedTime || task.completeTime || task.完成时间;
             if (!completedTime) return false;
-            
+
             let completedDate;
             if (typeof completedTime === 'number') {
                 completedDate = new Date(completedTime);
             } else if (typeof completedTime === 'string') {
                 completedDate = new Date(completedTime);
+
+                // 如果解析失败，尝试中文格式
+                if (isNaN(completedDate.getTime())) {
+                    const match = completedTime.match(/(\d{4})\/(\d{2})\/(\d{2})\s+(\d{2}):(\d{2}):(\d{2})/);
+                    if (match) {
+                        const [, year, month, day, hour, minute, second] = match;
+                        completedDate = new Date(year, month - 1, day, hour, minute, second);
+                    }
+                }
             } else {
                 return false;
             }
-            
+
             if (isNaN(completedDate.getTime())) return false;
-            
-            return completedDate >= start && completedDate < end;
+
+            const isInRange = completedDate >= start && completedDate < end;
+
+            if (isInRange) {
+                console.log(`✅ 周报匹配任务: "${task.title}" 完成于 ${completedDate.toLocaleString()}`);
+            }
+
+            return isInRange;
         });
     }
 
@@ -380,16 +423,27 @@ class DoubaoAPI {
     formatCompletedTime(task) {
         const completedTime = task.completedTime || task.completeTime || task.完成时间;
         if (!completedTime) return null;
-        
+
         let date;
         if (typeof completedTime === 'number') {
             date = new Date(completedTime);
-        } else {
+        } else if (typeof completedTime === 'string') {
             date = new Date(completedTime);
+
+            // 如果解析失败，尝试中文格式
+            if (isNaN(date.getTime())) {
+                const match = completedTime.match(/(\d{4})\/(\d{2})\/(\d{2})\s+(\d{2}):(\d{2}):(\d{2})/);
+                if (match) {
+                    const [, year, month, day, hour, minute, second] = match;
+                    date = new Date(year, month - 1, day, hour, minute, second);
+                }
+            }
+        } else {
+            return null;
         }
-        
+
         if (isNaN(date.getTime())) return null;
-        
+
         return date.toLocaleString('zh-CN');
     }
 

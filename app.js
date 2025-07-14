@@ -858,12 +858,23 @@ class TaskManager {
 
             // 根据完成状态设置完成时间
             if (completed) {
-                // 标记为完成：记录当前时间
-                updateData.completedTime = Date.now();
-                console.log('✅ 任务标记为完成，记录完成时间:', new Date(updateData.completedTime).toLocaleString());
+                // 标记为完成：记录当前时间（使用ISO格式）
+                const now = new Date();
+                updateData.completedTime = now.toISOString();
+                updateData.完成时间 = now.toLocaleString('zh-CN', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: false
+                });
+                console.log('✅ 任务标记为完成，记录完成时间:', updateData.完成时间);
             } else {
                 // 取消完成：清空完成时间
                 updateData.completedTime = null;
+                updateData.完成时间 = null;
                 console.log('❌ 任务取消完成，清空完成时间');
             }
 
