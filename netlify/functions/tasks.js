@@ -90,6 +90,14 @@ async function getTasks(accessToken) {
                 try {
                     const result = JSON.parse(data);
                     if (result.code === 0) {
+                        console.log('飞书返回的记录数:', result.data.items.length);
+
+                        // 打印第一条记录的字段信息用于调试
+                        if (result.data.items.length > 0) {
+                            console.log('第一条记录的字段:', Object.keys(result.data.items[0].fields));
+                            console.log('完成时间字段值:', result.data.items[0].fields['完成时间']);
+                        }
+
                         // 转换数据格式
                         const tasks = result.data.items.map(record => {
                             const fields = record.fields;
@@ -101,6 +109,8 @@ async function getTasks(accessToken) {
                                 dueDate: fields['截止日期'] || '',
                                 createTime: fields['创建时间'] || '',
                                 completed: fields['是否已完成'] || false,
+                                completedTime: fields['完成时间'] || null, // 添加完成时间字段
+                                完成时间: fields['完成时间'] || null, // 同时保留中文字段名
                                 daysToDeadline: fields['距离截止日'] || 0
                             };
                         });
@@ -132,6 +142,8 @@ const fallbackTasks = [
         dueDate: '2024-12-10',
         createTime: '2024-12-01',
         completed: false,
+        completedTime: null,
+        完成时间: null,
         daysToDeadline: 6
     },
     {
@@ -142,6 +154,8 @@ const fallbackTasks = [
         dueDate: '2024-12-15',
         createTime: '2024-12-01',
         completed: true,
+        completedTime: '2024/12/04 10:30:00',
+        完成时间: '2024/12/04 10:30:00',
         daysToDeadline: 11
     }
 ];
