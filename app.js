@@ -43,6 +43,9 @@ class TaskManager {
         // 生成报告按钮
         document.getElementById('reportBtn').addEventListener('click', () => this.showReportModal());
 
+        // AI助手按钮
+        document.getElementById('aiChatBtn').addEventListener('click', () => this.showAiChatModal());
+
         // 日报按钮
         document.getElementById('dailyReportBtn').addEventListener('click', () => this.showReportModal('daily'));
 
@@ -1347,6 +1350,67 @@ class TaskManager {
 
             typeWriter();
         }, 800); // 延迟800ms开始打字，给用户更好的体验
+    }
+
+    // 显示AI对话模态框
+    showAiChatModal() {
+        document.getElementById('aiChatModal').classList.add('show');
+        // 重置到选择界面
+        document.getElementById('aiQuickOptions').style.display = 'block';
+        document.getElementById('aiChatInterface').style.display = 'none';
+    }
+
+    // 隐藏AI对话模态框
+    hideAiChatModal() {
+        document.getElementById('aiChatModal').classList.remove('show');
+    }
+
+    // 选择AI服务
+    selectAiService(serviceType) {
+        // 切换到对话界面
+        document.getElementById('aiQuickOptions').style.display = 'none';
+        document.getElementById('aiChatInterface').style.display = 'flex';
+
+        // 启动AI服务
+        window.aiChatSystem.selectService(serviceType);
+
+        // 聚焦输入框并绑定回车事件
+        setTimeout(() => {
+            const chatInput = document.getElementById('chatInput');
+            chatInput.focus();
+
+            // 绑定回车键发送消息
+            chatInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    this.sendMessage();
+                }
+            });
+        }, 100);
+    }
+
+    // 发送消息
+    sendMessage() {
+        const input = document.getElementById('chatInput');
+        const message = input.value.trim();
+
+        if (message && !window.aiChatSystem.isTyping) {
+            window.aiChatSystem.sendMessage(message);
+            input.value = '';
+        }
+    }
+
+    // 清空对话
+    clearChat() {
+        window.aiChatSystem.clearChat();
+    }
+
+    // 返回选择界面
+    backToOptions() {
+        document.getElementById('aiQuickOptions').style.display = 'block';
+        document.getElementById('aiChatInterface').style.display = 'none';
+        window.aiChatSystem.messages = [];
+        window.aiChatSystem.currentService = null;
     }
 
     // 复制报告
