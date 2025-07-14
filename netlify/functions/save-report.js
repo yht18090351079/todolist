@@ -65,30 +65,29 @@ function parseFeishuUrl(url) {
 // 保存报告到飞书表格
 async function saveReportToFeishu(accessToken, reportData) {
     return new Promise((resolve, reject) => {
-        const appToken = parseFeishuUrl(FEISHU_CONFIG.BASE_URL);
+        const appToken = 'DPIqbB7OWa05ZZsiQi8cP1jnnBb'; // 直接使用解析好的值，与任务操作保持一致
         
-        // 构建字段数据（根据飞书表格的实际字段名）
-        const fieldsData = {
-            '类型': reportData.type || '',
-            '标题': reportData.title || '',
-            '内容': reportData.content || '',
-            '日期': reportData.date || '',
-            '任务数量': reportData.taskCount || 0,
-            '生成时间': new Date().toLocaleString('zh-CN', {
-                timeZone: 'Asia/Shanghai',
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
-                hour12: false
-            })
-        };
+        // 构建字段数据（参考任务写入方式，使用中文字段名）
+        const fieldsData = {};
+
+        // 必填字段
+        fieldsData['类型'] = reportData.type || '';
+        fieldsData['标题'] = reportData.title || '';
+        fieldsData['内容'] = reportData.content || '';
+        fieldsData['日期'] = reportData.date || '';
+
+        // 可选字段 - 只有当有值时才设置
+        if (reportData.taskCount !== undefined) {
+            fieldsData['任务数量'] = reportData.taskCount;
+        }
+
+        // 生成时间 - 使用时间戳格式（参考任务创建时间的格式）
+        fieldsData['生成时间'] = Date.now();
 
         console.log('准备保存的字段数据:', fieldsData);
         console.log('报告内容长度:', reportData.content ? reportData.content.length : 0);
 
+        // 使用与任务创建相同的API格式 - 直接传递fields对象
         const postData = JSON.stringify({ fields: fieldsData });
         
         const options = {
