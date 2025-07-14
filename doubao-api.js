@@ -62,6 +62,10 @@ class DoubaoAPI {
     // 生成日报
     async generateDailyReport(tasks, targetDate = null) {
         try {
+            // 🔄 每次生成日报都清空对话历史，确保全新对话
+            this.clearHistory();
+            console.log('🆕 开始全新的日报对话');
+
             const today = targetDate || new Date().toISOString().split('T')[0];
             console.log('📅 生成日报，目标日期:', today);
             console.log('📋 总任务数:', tasks.length);
@@ -141,6 +145,10 @@ class DoubaoAPI {
     // 生成周报
     async generateWeeklyReport(tasks, targetDate = null) {
         try {
+            // 🔄 每次生成周报都清空对话历史，确保全新对话
+            this.clearHistory();
+            console.log('🆕 开始全新的周报对话');
+
             const today = targetDate ? new Date(targetDate) : new Date();
             const { startOfWeek, endOfWeek } = this.getWeekRange(today);
 
@@ -654,7 +662,7 @@ class DoubaoAPI {
     // 清空对话历史
     clearHistory() {
         this.conversationHistory = [];
-        console.log('🗑️ 对话历史已清空');
+        console.log('🗑️ 对话历史已清空 - 确保每次都是全新的AI对话');
     }
 
     // 获取对话历史

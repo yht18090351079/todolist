@@ -1295,6 +1295,12 @@ class TaskManager {
     // 隐藏报告模态框
     hideReportModal() {
         document.getElementById('reportModal').classList.remove('show');
+
+        // 🔄 关闭弹窗时清空AI对话历史，确保下次是全新对话
+        if (window.doubaoAPI) {
+            window.doubaoAPI.clearHistory();
+            console.log('🆕 弹窗关闭，AI对话历史已清空');
+        }
     }
 
     // 显示生成进度
