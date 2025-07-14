@@ -42,11 +42,7 @@ class TaskManager {
         
 
 
-        // 日报按钮
-        document.getElementById('dailyReportBtn').addEventListener('click', () => this.showReportModal('daily'));
 
-        // 周报按钮
-        document.getElementById('weeklyReportBtn').addEventListener('click', () => this.showReportModal('weekly'));
         
         // 新增任务按钮
         document.getElementById('addTaskBtn').addEventListener('click', () => this.showTaskModal());
@@ -78,29 +74,19 @@ class TaskManager {
         document.getElementById('cancelBtn').addEventListener('click', () => this.hideTaskModal());
         document.getElementById('saveTaskBtn').addEventListener('click', () => this.saveTask());
         
-        // 报告相关
-        document.getElementById('closeReportModal').addEventListener('click', () => this.hideReportModal());
-        document.getElementById('cancelReportBtn').addEventListener('click', () => this.hideReportModal());
-        document.getElementById('generateReportBtn').addEventListener('click', () => this.generateReport());
-        document.getElementById('copyReportBtn').addEventListener('click', () => this.copyReport());
+
         
         // 模态框外部点击关闭
         document.getElementById('taskModal').addEventListener('click', (e) => {
             if (e.target.id === 'taskModal') this.hideTaskModal();
         });
-        document.getElementById('reportModal').addEventListener('click', (e) => {
-            if (e.target.id === 'reportModal') this.hideReportModal();
-        });
+
 
         // 初始化项目输入控件
         this.initProjectInput();
     }
 
-    // 设置默认日期
-    setDefaultDates() {
-        const today = new Date().toISOString().split('T')[0];
-        document.getElementById('reportDate').value = today;
-    }
+
 
     // 初始化项目输入控件
     initProjectInput() {
@@ -385,24 +371,23 @@ class TaskManager {
         
         // 更新项目筛选下拉框
         const projectFilter = document.getElementById('projectFilter');
-        const reportProject = document.getElementById('reportProject');
-        
-        [projectFilter, reportProject].forEach(select => {
+
+        if (projectFilter) {
             // 保存当前选中值
-            const currentValue = select.value;
-            
+            const currentValue = projectFilter.value;
+
             // 清空并重新填充
-            select.innerHTML = '<option value="">所有项目</option>';
+            projectFilter.innerHTML = '<option value="">所有项目</option>';
             projects.forEach(project => {
                 const option = document.createElement('option');
                 option.value = project;
                 option.textContent = project;
-                select.appendChild(option);
+                projectFilter.appendChild(option);
             });
-            
+
             // 恢复选中值
-            select.value = currentValue;
-        });
+            projectFilter.value = currentValue;
+        }
     }
 
     // 更新筛选条件
