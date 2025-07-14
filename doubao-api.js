@@ -64,12 +64,22 @@ class DoubaoAPI {
         try {
             const today = targetDate || new Date().toISOString().split('T')[0];
             console.log('📅 生成日报，目标日期:', today);
+            console.log('📋 总任务数:', tasks.length);
+            console.log('✅ 已完成任务数:', tasks.filter(t => t.completed).length);
+
+            // 显示所有已完成任务的时间信息
+            const completedTasks = tasks.filter(t => t.completed);
+            console.log('🕐 所有已完成任务的时间信息:');
+            completedTasks.forEach(task => {
+                const completedTime = task.completedTime || task.completeTime || task.完成时间;
+                console.log(`  - "${task.title}": ${completedTime} (类型: ${typeof completedTime})`);
+            });
 
             // 筛选当天完成的任务
-            const completedTasks = this.filterTasksByDate(tasks, today);
-            console.log('✅ 找到当天完成的任务:', completedTasks.length, '个');
+            const todayCompletedTasks = this.filterTasksByDate(tasks, today);
+            console.log('✅ 找到当天完成的任务:', todayCompletedTasks.length, '个');
 
-            if (completedTasks.length === 0) {
+            if (todayCompletedTasks.length === 0) {
                 return {
                     success: true,
                     content: `# 📅 工作日报 - ${today}
@@ -87,7 +97,7 @@ class DoubaoAPI {
             }
 
             // 构建提示词
-            const prompt = this.buildDailyReportPrompt(completedTasks, today);
+            const prompt = this.buildDailyReportPrompt(todayCompletedTasks, today);
             
             // 构建消息
             const messages = [
@@ -109,7 +119,7 @@ class DoubaoAPI {
                 this.conversationHistory.push({
                     type: 'daily_report',
                     date: today,
-                    tasks: completedTasks,
+                    tasks: todayCompletedTasks,
                     content: result.content,
                     timestamp: Date.now()
                 });
@@ -223,6 +233,7 @@ class DoubaoAPI {
             if (typeof completedTime === 'number') {
                 // 时间戳格式
                 completedDate = new Date(completedTime);
+                console.log(`  📅 解析时间戳: ${completedTime} → ${completedDate.toLocaleString()}`);
             } else if (typeof completedTime === 'string') {
                 // 字符串格式，尝试解析
                 completedDate = new Date(completedTime);
@@ -234,9 +245,13 @@ class DoubaoAPI {
                     if (match) {
                         const [, year, month, day, hour, minute, second] = match;
                         completedDate = new Date(year, month - 1, day, hour, minute, second);
+                        console.log(`  📅 解析中文格式: ${completedTime} → ${completedDate.toLocaleString()}`);
                     }
+                } else {
+                    console.log(`  📅 解析字符串: ${completedTime} → ${completedDate.toLocaleString()}`);
                 }
             } else {
+                console.log(`  ❌ 不支持的时间格式: ${typeof completedTime} - ${completedTime}`);
                 return false;
             }
 

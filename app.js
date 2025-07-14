@@ -858,10 +858,15 @@ class TaskManager {
 
             // 根据完成状态设置完成时间
             if (completed) {
-                // 标记为完成：记录当前时间（使用ISO格式）
+                // 标记为完成：记录当前时间戳
                 const now = new Date();
-                updateData.completedTime = now.toISOString();
-                updateData.完成时间 = now.toLocaleString('zh-CN', {
+                const timestamp = now.getTime();
+
+                updateData.completedTime = timestamp; // 发送时间戳给后端
+
+                console.log('✅ 任务标记为完成，记录时间戳:', timestamp);
+                console.log('🕐 对应时间:', now.toLocaleString('zh-CN', {
+                    timeZone: 'Asia/Shanghai',
                     year: 'numeric',
                     month: '2-digit',
                     day: '2-digit',
@@ -869,12 +874,10 @@ class TaskManager {
                     minute: '2-digit',
                     second: '2-digit',
                     hour12: false
-                });
-                console.log('✅ 任务标记为完成，记录完成时间:', updateData.完成时间);
+                }));
             } else {
                 // 取消完成：清空完成时间
-                updateData.completedTime = null;
-                updateData.完成时间 = null;
+                updateData.completedTime = '';
                 console.log('❌ 任务取消完成，清空完成时间');
             }
 
@@ -1153,8 +1156,11 @@ class TaskManager {
             // 显示生成中状态
             document.getElementById('reportText').innerHTML = '<div class="generating-report"><i class="fas fa-robot"></i> AI正在分析今日任务，生成专业日报...</div>';
 
-            // 调用豆包API生成日报
-            const result = await window.doubaoAPI.generateDailyReport(this.tasks);
+            // 调用豆包API生成日报（使用今天的日期）
+            const today = new Date().toISOString().split('T')[0];
+            console.log('📅 生成日报的目标日期:', today);
+
+            const result = await window.doubaoAPI.generateDailyReport(this.tasks, today);
 
             if (result.success) {
                 console.log('✅ 日报生成成功');
@@ -1165,6 +1171,32 @@ class TaskManager {
             }
         } catch (error) {
             console.error('❌ 日报生成异常:', error);
+            document.getElementById('reportText').innerHTML = `<div class="error-message">❌ 日报生成异常: ${error.message}</div>`;
+        } finally {
+            this.showLoading(false);
+        }
+    }
+
+    // 测试特定日期的日报（用于调试）
+    async generateDailyReportForDate(targetDate) {
+        try {
+            console.log('🧪 测试生成日报，目标日期:', targetDate);
+            this.showLoading(true);
+
+            this.showReportModal(`📅 ${targetDate} 工作日报`);
+            document.getElementById('reportText').innerHTML = '<div class="generating-report"><i class="fas fa-robot"></i> AI正在分析指定日期任务，生成专业日报...</div>';
+
+            const result = await window.doubaoAPI.generateDailyReport(this.tasks, targetDate);
+
+            if (result.success) {
+                console.log('✅ 指定日期日报生成成功');
+                this.displayReport(result.content);
+            } else {
+                console.error('❌ 指定日期日报生成失败:', result.error);
+                document.getElementById('reportText').innerHTML = `<div class="error-message">❌ 日报生成失败: ${result.error}</div>`;
+            }
+        } catch (error) {
+            console.error('❌ 指定日期日报生成异常:', error);
             document.getElementById('reportText').innerHTML = `<div class="error-message">❌ 日报生成异常: ${error.message}</div>`;
         } finally {
             this.showLoading(false);
