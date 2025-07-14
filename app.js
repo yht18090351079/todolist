@@ -1153,8 +1153,8 @@ class TaskManager {
             // 显示报告模态框
             this.showReportModal('📅 今日工作日报');
 
-            // 显示生成中状态
-            document.getElementById('reportText').innerHTML = '<div class="generating-report"><i class="fas fa-robot"></i> AI正在分析今日任务，生成专业日报...</div>';
+            // 显示进度过程
+            await this.showGenerationProgress('daily');
 
             // 调用豆包API生成日报（使用今天的日期）
             const today = new Date().toISOString().split('T')[0];
@@ -1212,8 +1212,8 @@ class TaskManager {
             // 显示报告模态框
             this.showReportModal('📊 本周工作周报');
 
-            // 显示生成中状态
-            document.getElementById('reportText').innerHTML = '<div class="generating-report"><i class="fas fa-robot"></i> AI正在分析本周任务，生成专业周报...</div>';
+            // 显示进度过程
+            await this.showGenerationProgress('weekly');
 
             // 调用豆包API生成周报
             const result = await window.doubaoAPI.generateWeeklyReport(this.tasks);
@@ -1242,6 +1242,39 @@ class TaskManager {
     // 隐藏报告模态框
     hideReportModal() {
         document.getElementById('reportModal').classList.remove('show');
+    }
+
+    // 显示生成进度
+    async showGenerationProgress(type) {
+        const reportText = document.getElementById('reportText');
+        const isDaily = type === 'daily';
+
+        const steps = isDaily ? [
+            '🔍 正在分析今日完成的任务...',
+            '📊 正在统计任务完成情况...',
+            '🤖 正在连接AI服务...',
+            '✍️ AI正在生成专业日报...'
+        ] : [
+            '🔍 正在分析本周完成的任务...',
+            '📊 正在统计周度工作数据...',
+            '📈 正在分析工作趋势...',
+            '🤖 正在连接AI服务...',
+            '✍️ AI正在生成专业周报...'
+        ];
+
+        for (let i = 0; i < steps.length; i++) {
+            reportText.innerHTML = `<div class="generating-report">
+                <i class="fas fa-robot"></i>
+                <div class="progress-text">${steps[i]}</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: ${((i + 1) / steps.length) * 100}%"></div>
+                </div>
+                <div class="progress-percent">${Math.round(((i + 1) / steps.length) * 100)}%</div>
+            </div>`;
+
+            // 每步等待一段时间
+            await new Promise(resolve => setTimeout(resolve, 800));
+        }
     }
 
     // 显示报告内容

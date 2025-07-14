@@ -143,8 +143,18 @@ class DoubaoAPI {
         try {
             const today = targetDate ? new Date(targetDate) : new Date();
             const { startOfWeek, endOfWeek } = this.getWeekRange(today);
-            
+
             console.log('📊 生成周报，时间范围:', startOfWeek, '到', endOfWeek);
+            console.log('📋 总任务数:', tasks.length);
+            console.log('✅ 已完成任务数:', tasks.filter(t => t.completed).length);
+
+            // 显示所有已完成任务的时间信息
+            const completedTasks = tasks.filter(t => t.completed);
+            console.log('🕐 所有已完成任务的时间信息:');
+            completedTasks.forEach(task => {
+                const completedTime = task.completedTime || task.completeTime || task.完成时间;
+                console.log(`  - "${task.title}": ${completedTime} (类型: ${typeof completedTime})`);
+            });
 
             // 筛选本周完成的任务
             const weeklyTasks = this.filterTasksByWeek(tasks, startOfWeek, endOfWeek);
