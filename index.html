@@ -26,7 +26,14 @@
                         <i class="fas fa-sync-alt"></i>
                         同步数据
                     </button>
-
+                    <button class="btn btn-info" id="dailyReportBtn">
+                        <i class="fas fa-calendar-day"></i>
+                        生成日报
+                    </button>
+                    <button class="btn btn-success" id="weeklyReportBtn">
+                        <i class="fas fa-calendar-week"></i>
+                        生成周报
+                    </button>
                 </div>
             </div>
         </header>
@@ -43,7 +50,7 @@
                         </select>
                     </div>
                 </div>
-                
+
                 <div class="sidebar-section">
                     <h3>完成状态</h3>
                     <div class="filter-group">
@@ -181,6 +188,31 @@
             </div>
         </div>
     </div>
+    <!-- 报告显示模态框 -->
+    <div id="reportModal" class="modal">
+        <div class="modal-content report-modal">
+            <div class="modal-header">
+                <h2 id="reportTitle">📊 工作报告</h2>
+                <button class="modal-close" id="closeReportModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div id="reportContent" class="report-content">
+                    <div id="reportText" class="report-text"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-success" id="copyReportBtn">
+                    <i class="fas fa-copy"></i>
+                    复制报告
+                </button>
+                <button type="button" class="btn btn-secondary" id="closeReportBtn">
+                    关闭
+                </button>
+            </div>
+        </div>
+    </div>
 
 
 
@@ -196,6 +228,7 @@
 
     <!-- JavaScript文件 -->
     <script src="feishu-api.js"></script>
+    <script src="doubao-api.js"></script>
     <script src="app.js"></script>
 </body>
 </html>

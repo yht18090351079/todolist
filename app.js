@@ -44,6 +44,12 @@ class TaskManager {
     bindEventListeners() {
         // 同步数据按钮
         document.getElementById('syncBtn').addEventListener('click', () => this.syncData());
+
+        // 日报按钮
+        document.getElementById('dailyReportBtn').addEventListener('click', () => this.generateDailyReport());
+
+        // 周报按钮
+        document.getElementById('weeklyReportBtn').addEventListener('click', () => this.generateWeeklyReport());
         
 
 
@@ -78,6 +84,11 @@ class TaskManager {
         document.getElementById('closeModal').addEventListener('click', () => this.hideTaskModal());
         document.getElementById('cancelBtn').addEventListener('click', () => this.hideTaskModal());
         document.getElementById('saveTaskBtn').addEventListener('click', () => this.saveTask());
+
+        // 报告模态框事件
+        document.getElementById('closeReportModal').addEventListener('click', () => this.hideReportModal());
+        document.getElementById('closeReportBtn').addEventListener('click', () => this.hideReportModal());
+        document.getElementById('copyReportBtn').addEventListener('click', () => this.copyReport());
         
 
         
@@ -1119,7 +1130,116 @@ class TaskManager {
         }, 5000);
     }
 
+    // 生成日报
+    async generateDailyReport() {
+        try {
+            console.log('📅 开始生成日报...');
+            this.showLoading(true);
 
+            // 显示报告模态框
+            this.showReportModal('📅 今日工作日报');
+
+            // 显示生成中状态
+            document.getElementById('reportText').innerHTML = '<div class="generating-report"><i class="fas fa-robot"></i> AI正在分析今日任务，生成专业日报...</div>';
+
+            // 调用豆包API生成日报
+            const result = await window.doubaoAPI.generateDailyReport(this.tasks);
+
+            if (result.success) {
+                console.log('✅ 日报生成成功');
+                this.displayReport(result.content);
+            } else {
+                console.error('❌ 日报生成失败:', result.error);
+                document.getElementById('reportText').innerHTML = `<div class="error-message">❌ 日报生成失败: ${result.error}</div>`;
+            }
+        } catch (error) {
+            console.error('❌ 日报生成异常:', error);
+            document.getElementById('reportText').innerHTML = `<div class="error-message">❌ 日报生成异常: ${error.message}</div>`;
+        } finally {
+            this.showLoading(false);
+        }
+    }
+
+    // 生成周报
+    async generateWeeklyReport() {
+        try {
+            console.log('📊 开始生成周报...');
+            this.showLoading(true);
+
+            // 显示报告模态框
+            this.showReportModal('📊 本周工作周报');
+
+            // 显示生成中状态
+            document.getElementById('reportText').innerHTML = '<div class="generating-report"><i class="fas fa-robot"></i> AI正在分析本周任务，生成专业周报...</div>';
+
+            // 调用豆包API生成周报
+            const result = await window.doubaoAPI.generateWeeklyReport(this.tasks);
+
+            if (result.success) {
+                console.log('✅ 周报生成成功');
+                this.displayReport(result.content);
+            } else {
+                console.error('❌ 周报生成失败:', result.error);
+                document.getElementById('reportText').innerHTML = `<div class="error-message">❌ 周报生成失败: ${result.error}</div>`;
+            }
+        } catch (error) {
+            console.error('❌ 周报生成异常:', error);
+            document.getElementById('reportText').innerHTML = `<div class="error-message">❌ 周报生成异常: ${error.message}</div>`;
+        } finally {
+            this.showLoading(false);
+        }
+    }
+
+    // 显示报告模态框
+    showReportModal(title) {
+        document.getElementById('reportTitle').textContent = title;
+        document.getElementById('reportModal').classList.add('show');
+    }
+
+    // 隐藏报告模态框
+    hideReportModal() {
+        document.getElementById('reportModal').classList.remove('show');
+    }
+
+    // 显示报告内容
+    displayReport(content) {
+        const reportText = document.getElementById('reportText');
+        reportText.innerHTML = '';
+
+        // 创建打字机效果
+        let index = 0;
+        const speed = 20; // 打字速度
+
+        function typeWriter() {
+            if (index < content.length) {
+                reportText.textContent += content.charAt(index);
+                index++;
+                setTimeout(typeWriter, speed);
+            }
+        }
+
+        typeWriter();
+    }
+
+    // 复制报告
+    copyReport() {
+        const reportText = document.getElementById('reportText').textContent;
+        navigator.clipboard.writeText(reportText).then(() => {
+            // 显示复制成功提示
+            const btn = document.getElementById('copyReportBtn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-check"></i> 已复制';
+            btn.style.background = '#48bb78';
+
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.style.background = '';
+            }, 2000);
+        }).catch(err => {
+            console.error('复制失败:', err);
+            alert('复制失败，请手动选择文本复制');
+        });
+    }
 }
 
 // 页面加载完成后初始化应用
