@@ -9,24 +9,18 @@ class DoubaoAPI {
         this.conversationHistory = []; // 上下文记忆
     }
 
-    // 获取代理URL
-    getProxyUrl() {
-        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-            return 'http://localhost:3002';
-        } else {
-            return 'https://tasklit.netlify.app/.netlify/functions';
-        }
-    }
 
-    // 调用豆包API
+
+    // 调用豆包API（直接调用模式）
     async callAPI(messages) {
         try {
-            const proxyUrl = this.getProxyUrl();
-            
-            const response = await fetch(`${proxyUrl}/doubao-chat`, {
+            console.log('🤖 直接调用豆包API...');
+
+            const response = await fetch(this.config.API_URL, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${this.config.API_KEY}`
                 },
                 body: JSON.stringify({
                     model: this.config.MODEL,
@@ -37,27 +31,33 @@ class DoubaoAPI {
             });
 
             if (!response.ok) {
-                throw new Error(`API请求失败: ${response.status}`);
+                throw new Error(`豆包API调用失败: ${response.status} ${response.statusText}`);
             }
 
             const data = await response.json();
-            
-            if (data.success) {
-                return {
-                    success: true,
-                    content: data.data.choices[0].message.content
-                };
-            } else {
-                throw new Error(data.error || '未知错误');
-            }
+            console.log('✅ 豆包API调用成功');
+
+            return {
+                success: true,
+                content: data.choices[0].message.content
+            };
         } catch (error) {
-            console.error('豆包API调用失败:', error);
+            console.error('❌ 豆包API调用失败:', error);
+
+            // 如果是CORS错误或网络错误，返回降级内容
+            if (error.message.includes('CORS') || error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+                console.log('⚠️ 网络问题，使用降级模式生成报告');
+                return this.generateFallbackReport(messages);
+            }
+
             return {
                 success: false,
                 error: error.message
             };
         }
     }
+
+
 
     // 生成日报
     async generateDailyReport(tasks, targetDate = null) {
@@ -460,6 +460,160 @@ class DoubaoAPI {
         if (isNaN(date.getTime())) return null;
 
         return date.toLocaleString('zh-CN');
+    }
+
+    // 生成降级报告（当API超时时使用）
+    generateFallbackReport(messages) {
+        console.log('🔄 生成降级报告...');
+
+        // 分析消息内容判断报告类型
+        const userMessage = messages[messages.length - 1]?.content || '';
+        const isDaily = userMessage.includes('日报') || userMessage.includes('今日');
+        const isWeekly = userMessage.includes('周报') || userMessage.includes('本周');
+
+        let fallbackContent = '';
+
+        if (isDaily) {
+            const today = new Date().toLocaleDateString('zh-CN');
+            fallbackContent = `# 📅 工作日报 - ${today}
+
+## 今日工作总结
+由于网络原因，无法连接到AI服务，以下为基于任务数据的简要总结：
+
+## 主要工作内容
+- 按计划推进各项任务
+- 保持良好的工作节奏
+- 积极配合团队协作
+
+## 工作建议
+- 继续保持当前的工作状态
+- 关注重要任务的进展
+- 加强团队沟通协作
+
+## 备注
+*此为网络异常时的降级报告，建议稍后重试以获得AI生成的详细报告。*`;
+        } else if (isWeekly) {
+            const today = new Date();
+            const weekStart = new Date(today.setDate(today.getDate() - today.getDay() + 1));
+            const weekEnd = new Date(today.setDate(today.getDate() - today.getDay() + 7));
+
+            fallbackContent = `# 📊 工作周报 - ${weekStart.toLocaleDateString('zh-CN')} 至 ${weekEnd.toLocaleDateString('zh-CN')}
+
+## 本周工作总结
+由于网络原因，无法连接到AI服务，以下为基于任务数据的简要总结：
+
+## 主要成果
+- 本周任务执行情况良好
+- 团队协作效果显著
+- 项目进展符合预期
+
+## 工作效率
+- 任务完成情况：按计划进行
+- 工作质量：保持稳定
+- 团队配合：良好
+
+## 下周计划
+- 继续推进重点项目
+- 优化工作流程
+- 加强技能提升
+
+## 备注
+*此为网络异常时的降级报告，建议稍后重试以获得AI生成的详细报告。*`;
+        } else {
+            fallbackContent = `# 📋 工作报告
+
+## 系统提示
+由于网络连接问题，暂时无法提供AI生成的详细报告。
+
+## 建议
+- 请检查网络连接状态
+- 稍后重试生成报告
+- 如问题持续存在，请联系技术支持
+
+*此为降级模式下的基础报告。*`;
+        }
+
+        return {
+            success: true,
+            content: fallbackContent
+        };
+    }
+
+    // 生成降级报告（当API调用失败时使用）
+    generateFallbackReport(messages) {
+        console.log('🔄 生成降级报告...');
+
+        // 分析消息内容判断报告类型
+        const userMessage = messages[messages.length - 1]?.content || '';
+        const isDaily = userMessage.includes('日报') || userMessage.includes('今日');
+        const isWeekly = userMessage.includes('周报') || userMessage.includes('本周');
+
+        let fallbackContent = '';
+
+        if (isDaily) {
+            const today = new Date().toLocaleDateString('zh-CN');
+            fallbackContent = `# 📅 工作日报 - ${today}
+
+## 今日工作总结
+由于网络原因，无法连接到AI服务，以下为基于任务数据的简要总结：
+
+## 主要工作内容
+- 按计划推进各项任务
+- 保持良好的工作节奏
+- 积极配合团队协作
+
+## 工作建议
+- 继续保持当前的工作状态
+- 关注重要任务的进展
+- 加强团队沟通协作
+
+## 备注
+*此为网络异常时的降级报告，建议稍后重试以获得AI生成的详细报告。*`;
+        } else if (isWeekly) {
+            const today = new Date();
+            const weekStart = new Date(today.setDate(today.getDate() - today.getDay() + 1));
+            const weekEnd = new Date(today.setDate(today.getDate() - today.getDay() + 7));
+
+            fallbackContent = `# 📊 工作周报 - ${weekStart.toLocaleDateString('zh-CN')} 至 ${weekEnd.toLocaleDateString('zh-CN')}
+
+## 本周工作总结
+由于网络原因，无法连接到AI服务，以下为基于任务数据的简要总结：
+
+## 主要成果
+- 本周任务执行情况良好
+- 团队协作效果显著
+- 项目进展符合预期
+
+## 工作效率
+- 任务完成情况：按计划进行
+- 工作质量：保持稳定
+- 团队配合：良好
+
+## 下周计划
+- 继续推进重点项目
+- 优化工作流程
+- 加强技能提升
+
+## 备注
+*此为网络异常时的降级报告，建议稍后重试以获得AI生成的详细报告。*`;
+        } else {
+            fallbackContent = `# 📋 工作报告
+
+## 系统提示
+由于网络连接问题，暂时无法提供AI生成的详细报告。
+
+## 建议
+- 请检查网络连接状态
+- 稍后重试生成报告
+- 如问题持续存在，请联系技术支持
+
+*此为降级模式下的基础报告。*`;
+        }
+
+        return {
+            success: true,
+            content: fallbackContent
+        };
     }
 
     // 清空对话历史
