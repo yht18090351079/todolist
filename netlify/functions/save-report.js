@@ -67,47 +67,44 @@ async function saveReportToFeishu(accessToken, reportData) {
     return new Promise((resolve, reject) => {
         const appToken = 'DPIqbB7OWa05ZZsiQi8cP1jnnBb'; // 直接使用解析好的值，与任务操作保持一致
         
-        // 构建字段数据（根据飞书表格实际字段名）
+        // 构建字段数据（最简化测试版本）
         const fieldsData = {};
 
-        // 基本字段 - 对应表格中的字段
-        fieldsData['类型'] = String(reportData.type || '');        // 对应"类型"列
-        fieldsData['标题'] = String(reportData.title || '');       // 对应"标题"列
-        fieldsData['日期'] = String(reportData.date || '');        // 对应"日期"列
+        // 只测试最基本的字段，逐步添加
+        fieldsData['类型'] = String(reportData.type || '').replace(/[^\u4e00-\u9fa5a-zA-Z0-9]/g, '');  // 只保留中英文数字
 
-        // 限制标题长度
-        if (fieldsData['标题'].length > 200) {
-            fieldsData['标题'] = fieldsData['标题'].substring(0, 200);
+        // 简化标题，移除特殊字符
+        let title = String(reportData.title || '');
+        title = title.replace(/[^\u4e00-\u9fa5a-zA-Z0-9\s\-]/g, '');  // 只保留中英文数字空格横线
+        if (title.length > 100) {
+            title = title.substring(0, 100);
         }
+        fieldsData['标题'] = title;
 
-        // 内容字段 - 保存完整内容
-        let content = String(reportData.content || '');
+        // 简化日期
+        let date = String(reportData.date || '');
+        date = date.replace(/[^\u4e00-\u9fa5a-zA-Z0-9\s\-至]/g, '');  // 只保留基本字符
+        fieldsData['日期'] = date;
 
-        // 只在内容极长时才进行合理截断（飞书字段限制）
-        if (content.length > 50000) {
-            content = content.substring(0, 50000) + '\n\n...(内容过长，已截断到50000字符)';
-            console.log('⚠️ 报告内容超过50000字符，已适当截断');
-        }
+        // 暂时跳过内容字段进行测试
+        fieldsData['内容'] = '测试内容';
 
-        fieldsData['内容'] = content;
+        // 暂时跳过其他字段
+        // fieldsData['任务数量'] = Number(reportData.taskCount) || 0;
+        // fieldsData['生成时间'] = Date.now();
 
-        // 其他字段 - 对应表格中的字段
-        if (reportData.taskCount !== undefined && reportData.taskCount !== null) {
-            fieldsData['任务数量'] = Number(reportData.taskCount) || 0;  // 对应"任务数量"列
-        }
+        console.log('🧪 最简化测试版本 - 字段数据:');
+        console.log('原始数据:', {
+            type: reportData.type,
+            title: reportData.title ? reportData.title.substring(0, 50) + '...' : null,
+            date: reportData.date,
+            taskCount: reportData.taskCount
+        });
 
-        fieldsData['生成时间'] = Date.now();  // 对应"生成时间"列，使用时间戳格式
-
-        console.log('📊 字段映射验证:');
-        console.log('飞书表格字段: 类型、标题、内容、日期、任务数量、生成时间');
-        console.log('准备保存的字段数据:');
+        console.log('清理后的字段数据:');
         Object.keys(fieldsData).forEach(key => {
             const value = fieldsData[key];
-            if (key === '内容') {
-                console.log(`  ✓ ${key}: ${typeof value} - 长度 ${value ? String(value).length : 0} 字符`);
-            } else {
-                console.log(`  ✓ ${key}: ${typeof value} - ${value ? String(value).substring(0, 200) : 'null'}${value && String(value).length > 200 ? '...' : ''}`);
-            }
+            console.log(`  ✓ ${key}: "${value}" (${typeof value}, 长度: ${String(value).length})`);
         });
         console.log('报告内容长度:', reportData.content ? reportData.content.length : 0);
 
@@ -220,6 +217,42 @@ exports.handler = async (event, context) => {
                     error: '缺少必要字段: title, type'
                 })
             };
+        }
+
+        // 如果是测试模式，使用极简数据
+        if (reportData.title.includes('测试') || process.env.NODE_ENV === 'test') {
+            console.log('🧪 使用极简测试数据');
+            const testData = {
+                fields: {
+                    '类型': '测试',
+                    '标题': '测试报告',
+                    '内容': '测试内容',
+                    '日期': '2025-07-14'
+                }
+            };
+
+            // 直接尝试保存测试数据
+            try {
+                const accessToken = await getAccessToken();
+                const result = await saveReportToFeishu(accessToken, {
+                    type: '测试',
+                    title: '测试报告',
+                    content: '测试内容',
+                    date: '2025-07-14'
+                });
+
+                return {
+                    statusCode: 200,
+                    headers,
+                    body: JSON.stringify({
+                        success: true,
+                        message: '测试数据保存成功',
+                        data: result
+                    })
+                };
+            } catch (error) {
+                console.error('测试数据保存失败:', error);
+            }
         }
 
         // 验证字段长度
