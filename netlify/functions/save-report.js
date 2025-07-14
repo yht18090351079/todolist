@@ -9,6 +9,11 @@ const FEISHU_CONFIG = {
     REPORT_TABLE_ID: 'tblgMxHJqUJH2s8A' // 报告表格ID
 };
 
+console.log('飞书配置信息:');
+console.log('APP_ID:', FEISHU_CONFIG.APP_ID);
+console.log('BASE_URL:', FEISHU_CONFIG.BASE_URL);
+console.log('REPORT_TABLE_ID:', FEISHU_CONFIG.REPORT_TABLE_ID);
+
 // 获取访问令牌
 async function getAccessToken() {
     return new Promise((resolve, reject) => {
@@ -108,13 +113,31 @@ async function saveReportToFeishu(accessToken, reportData) {
                 try {
                     const result = JSON.parse(data);
                     console.log('飞书API响应:', result);
-                    
+
                     if (result.code === 0) {
                         resolve(result.data);
                     } else {
-                        reject(new Error(`保存报告失败: ${result.msg || '未知错误'}`));
+                        // 详细的错误信息
+                        let errorMsg = `保存报告失败: ${result.msg || '未知错误'}`;
+
+                        if (result.code === 99991663) {
+                            errorMsg = '权限不足：应用没有访问该表格的权限';
+                        } else if (result.code === 99991664) {
+                            errorMsg = '表格不存在或ID错误';
+                        } else if (result.code === 99991665) {
+                            errorMsg = '字段不存在或字段名错误';
+                        }
+
+                        console.error('飞书API错误详情:', {
+                            code: result.code,
+                            msg: result.msg,
+                            error: errorMsg
+                        });
+
+                        reject(new Error(errorMsg));
                     }
                 } catch (error) {
+                    console.error('解析飞书API响应失败:', error);
                     reject(error);
                 }
             });

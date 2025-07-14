@@ -1165,16 +1165,20 @@ class TaskManager {
                 console.log('✅ 日报生成成功');
                 this.displayReport(result.content);
 
-                // 保存日报到飞书表格
-                const todayCompletedTasks = window.doubaoAPI.filterTasksByDate(this.tasks, today);
+                // 尝试保存日报到飞书表格（不影响报告显示）
+                try {
+                    const todayCompletedTasks = window.doubaoAPI.filterTasksByDate(this.tasks, today);
 
-                await this.saveReportToFeishu({
-                    title: `工作日报 - ${today}`,
-                    type: '日报',
-                    date: today,
-                    content: result.content,
-                    taskCount: todayCompletedTasks.length
-                });
+                    await this.saveReportToFeishu({
+                        title: `工作日报 - ${today}`,
+                        type: '日报',
+                        date: today,
+                        content: result.content,
+                        taskCount: todayCompletedTasks.length
+                    });
+                } catch (saveError) {
+                    console.warn('⚠️ 保存到飞书失败，但报告已生成:', saveError.message);
+                }
             } else {
                 console.error('❌ 日报生成失败:', result.error);
                 document.getElementById('reportText').innerHTML = `<div class="error-message">❌ 日报生成失败: ${result.error}</div>`;
@@ -1229,21 +1233,24 @@ class TaskManager {
                 console.log('✅ 周报生成成功');
                 this.displayReport(result.content);
 
-                // 获取本周时间范围用于标题
-                const today = new Date();
-                const { startOfWeek, endOfWeek } = window.doubaoAPI.getWeekRange(today);
+                // 尝试保存周报到飞书表格（不影响报告显示）
+                try {
+                    const today = new Date();
+                    const { startOfWeek, endOfWeek } = window.doubaoAPI.getWeekRange(today);
 
-                // 统计本周完成的任务数量
-                const weeklyCompletedTasks = window.doubaoAPI.filterTasksByWeek(this.tasks, startOfWeek, endOfWeek);
+                    // 统计本周完成的任务数量
+                    const weeklyCompletedTasks = window.doubaoAPI.filterTasksByWeek(this.tasks, startOfWeek, endOfWeek);
 
-                // 保存周报到飞书表格
-                await this.saveReportToFeishu({
-                    title: `工作周报 - ${startOfWeek} 至 ${endOfWeek}`,
-                    type: '周报',
-                    date: `${startOfWeek} 至 ${endOfWeek}`,
-                    content: result.content,
-                    taskCount: weeklyCompletedTasks.length
-                });
+                    await this.saveReportToFeishu({
+                        title: `工作周报 - ${startOfWeek} 至 ${endOfWeek}`,
+                        type: '周报',
+                        date: `${startOfWeek} 至 ${endOfWeek}`,
+                        content: result.content,
+                        taskCount: weeklyCompletedTasks.length
+                    });
+                } catch (saveError) {
+                    console.warn('⚠️ 保存到飞书失败，但报告已生成:', saveError.message);
+                }
             } else {
                 console.error('❌ 周报生成失败:', result.error);
                 document.getElementById('reportText').innerHTML = `<div class="error-message">❌ 周报生成失败: ${result.error}</div>`;
@@ -1463,7 +1470,14 @@ class TaskManager {
                 console.log('🔗 查看飞书表格: https://wcn0pu8598xr.feishu.cn/base/DPIqbB7OWa05ZZsiQi8cP1jnnBb?table=tblgMxHJqUJH2s8A&view=vewLnkMPnY');
             } else {
                 console.error('❌ 报告保存失败:', result.error);
-                this.showNotification('❌ 报告保存失败: ' + result.error, 'error');
+
+                // 特殊处理权限错误
+                if (result.error.includes('Permission denied')) {
+                    this.showNotification('⚠️ 飞书权限不足，报告已生成但未保存到表格', 'error');
+                    console.log('💡 解决方案: 请检查飞书应用是否有表格写入权限');
+                } else {
+                    this.showNotification('❌ 报告保存失败: ' + result.error, 'error');
+                }
             }
         } catch (error) {
             console.error('❌ 保存报告异常:', error);
