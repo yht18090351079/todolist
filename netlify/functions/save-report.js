@@ -67,51 +67,26 @@ async function saveReportToFeishu(accessToken, reportData) {
     return new Promise((resolve, reject) => {
         const appToken = 'DPIqbB7OWa05ZZsiQi8cP1jnnBb'; // 直接使用解析好的值，与任务操作保持一致
         
-        // 构建字段数据（恢复完整功能，保留特殊字符清理）
+        // 构建字段数据（极简版本，逐个测试字段）
         const fieldsData = {};
 
-        // 基本字段 - 轻度清理特殊字符
+        // 先只测试一个字段
         fieldsData['类型'] = String(reportData.type || '');
 
-        // 标题 - 保留更多字符，只移除可能有问题的字符
-        let title = String(reportData.title || '');
-        title = title.replace(/[\x00-\x1f\x7f-\x9f]/g, '');  // 移除控制字符
-        if (title.length > 200) {
-            title = title.substring(0, 200);
-        }
-        fieldsData['标题'] = title;
+        // 如果类型字段成功，再逐步添加其他字段
+        // fieldsData['标题'] = String(reportData.title || '');
+        // fieldsData['内容'] = String(reportData.content || '');
+        // fieldsData['日期'] = String(reportData.date || '');
 
-        // 日期 - 保持原样
-        fieldsData['日期'] = String(reportData.date || '');
-
-        // 内容字段 - 恢复完整内容，但清理控制字符
-        let content = String(reportData.content || '');
-        content = content.replace(/[\x00-\x1f\x7f-\x9f]/g, '');  // 移除控制字符
-
-        // 合理的长度限制
-        if (content.length > 50000) {
-            content = content.substring(0, 50000) + '\n\n...(内容过长，已截断到50000字符)';
-            console.log('⚠️ 报告内容超过50000字符，已适当截断');
-        }
-        fieldsData['内容'] = content;
-
-        // 恢复其他字段
-        if (reportData.taskCount !== undefined && reportData.taskCount !== null) {
-            fieldsData['任务数量'] = Number(reportData.taskCount) || 0;
-        }
-
-        fieldsData['生成时间'] = Date.now();
-
-        console.log('📊 完整功能版本 - 字段数据:');
-        console.log('准备保存的字段数据:');
+        console.log('🔍 字段名验证版本:');
+        console.log('期望的飞书字段: 类型、标题、内容、日期、任务数量、生成时间');
+        console.log('当前使用的字段:');
         Object.keys(fieldsData).forEach(key => {
             const value = fieldsData[key];
-            if (key === '内容') {
-                console.log(`  ✓ ${key}: ${typeof value} - 长度 ${value ? String(value).length : 0} 字符`);
-            } else {
-                console.log(`  ✓ ${key}: ${typeof value} - ${value ? String(value).substring(0, 100) : 'null'}${value && String(value).length > 100 ? '...' : ''}`);
-            }
+            console.log(`  字段名: "${key}" | 类型: ${typeof value} | 值: ${key === '内容' ? `长度${String(value).length}字符` : String(value).substring(0, 50)}`);
         });
+
+        console.log('字段数量:', Object.keys(fieldsData).length);
         console.log('报告内容长度:', reportData.content ? reportData.content.length : 0);
 
         // 使用与任务创建相同的API格式 - 直接传递fields对象
