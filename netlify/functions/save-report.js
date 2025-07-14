@@ -67,24 +67,37 @@ async function saveReportToFeishu(accessToken, reportData) {
     return new Promise((resolve, reject) => {
         const appToken = 'DPIqbB7OWa05ZZsiQi8cP1jnnBb'; // 直接使用解析好的值，与任务操作保持一致
         
-        // 构建字段数据（参考任务写入方式，使用中文字段名）
+        // 构建字段数据（简化版本，逐步测试）
         const fieldsData = {};
 
-        // 必填字段
-        fieldsData['类型'] = reportData.type || '';
-        fieldsData['标题'] = reportData.title || '';
-        fieldsData['内容'] = reportData.content || '';
-        fieldsData['日期'] = reportData.date || '';
+        // 先只测试基本字段
+        fieldsData['类型'] = String(reportData.type || '');
+        fieldsData['日期'] = String(reportData.date || '');
 
-        // 可选字段 - 只有当有值时才设置
-        if (reportData.taskCount !== undefined) {
-            fieldsData['任务数量'] = reportData.taskCount;
+        // 标题字段 - 限制长度
+        let title = String(reportData.title || '');
+        if (title.length > 200) {
+            title = title.substring(0, 200);
         }
+        fieldsData['标题'] = title;
 
-        // 生成时间 - 使用时间戳格式（参考任务创建时间的格式）
-        fieldsData['生成时间'] = Date.now();
+        // 内容字段 - 大幅限制长度进行测试
+        let content = String(reportData.content || '');
+        if (content.length > 1000) {
+            content = content.substring(0, 1000) + '\n...(已截断)';
+            console.log('⚠️ 报告内容过长，已截断到1000字符进行测试');
+        }
+        fieldsData['内容'] = content;
 
-        console.log('准备保存的字段数据:', fieldsData);
+        // 暂时跳过可能有问题的字段
+        // fieldsData['任务数量'] = Number(reportData.taskCount) || 0;
+        // fieldsData['生成时间'] = Date.now();
+
+        console.log('准备保存的字段数据:');
+        Object.keys(fieldsData).forEach(key => {
+            const value = fieldsData[key];
+            console.log(`  ${key}: ${typeof value} - ${value ? String(value).substring(0, 100) : 'null'}${value && String(value).length > 100 ? '...' : ''}`);
+        });
         console.log('报告内容长度:', reportData.content ? reportData.content.length : 0);
 
         // 使用与任务创建相同的API格式 - 直接传递fields对象
@@ -187,13 +200,25 @@ exports.handler = async (event, context) => {
         console.log('接收到的报告数据:', reportData);
 
         // 验证必要字段
-        if (!reportData.title || !reportData.type || !reportData.content) {
+        if (!reportData.title || !reportData.type) {
             return {
                 statusCode: 400,
                 headers,
                 body: JSON.stringify({
                     success: false,
-                    error: '缺少必要字段: title, type, content'
+                    error: '缺少必要字段: title, type'
+                })
+            };
+        }
+
+        // 验证字段长度
+        if (reportData.title && reportData.title.length > 500) {
+            return {
+                statusCode: 400,
+                headers,
+                body: JSON.stringify({
+                    success: false,
+                    error: '标题过长，最大500字符'
                 })
             };
         }
