@@ -18,21 +18,26 @@ class TaskManager {
 
     // 初始化应用
     async init() {
-        console.log('初始化任务管理系统...');
-        
-        // 绑定事件监听器
-        this.bindEventListeners();
-        
-        // 设置默认日期
-        this.setDefaultDates();
+        console.log('🔧 初始化任务管理系统...');
 
-        // 检查连接状态
-        await this.checkConnectionStatus();
+        try {
+            // 绑定事件监听器
+            console.log('📎 绑定事件监听器...');
+            this.bindEventListeners();
 
-        // 加载数据
-        await this.loadData();
-        
-        console.log('✅ 任务管理系统初始化完成');
+            // 检查连接状态
+            console.log('🔗 检查连接状态...');
+            await this.checkConnectionStatus();
+
+            // 加载数据
+            console.log('📊 开始加载数据...');
+            await this.loadData();
+
+            console.log('✅ 任务管理系统初始化完成');
+        } catch (error) {
+            console.error('❌ 初始化过程中出错:', error);
+            throw error;
+        }
     }
 
     // 绑定事件监听器
@@ -1119,5 +1124,11 @@ class TaskManager {
 
 // 页面加载完成后初始化应用
 document.addEventListener('DOMContentLoaded', () => {
-    window.taskManager = new TaskManager();
+    console.log('🚀 DOM加载完成，开始初始化TaskManager...');
+    try {
+        window.taskManager = new TaskManager();
+        console.log('✅ TaskManager初始化成功');
+    } catch (error) {
+        console.error('❌ TaskManager初始化失败:', error);
+    }
 });
