@@ -1166,12 +1166,14 @@ class TaskManager {
                 this.displayReport(result.content);
 
                 // 保存日报到飞书表格
+                const todayCompletedTasks = window.doubaoAPI.filterTasksByDate(this.tasks, today);
+
                 await this.saveReportToFeishu({
                     title: `工作日报 - ${today}`,
                     type: '日报',
                     date: today,
                     content: result.content,
-                    taskCount: this.tasks.filter(t => t.completed).length
+                    taskCount: todayCompletedTasks.length
                 });
             } else {
                 console.error('❌ 日报生成失败:', result.error);
@@ -1231,13 +1233,16 @@ class TaskManager {
                 const today = new Date();
                 const { startOfWeek, endOfWeek } = window.doubaoAPI.getWeekRange(today);
 
+                // 统计本周完成的任务数量
+                const weeklyCompletedTasks = window.doubaoAPI.filterTasksByWeek(this.tasks, startOfWeek, endOfWeek);
+
                 // 保存周报到飞书表格
                 await this.saveReportToFeishu({
                     title: `工作周报 - ${startOfWeek} 至 ${endOfWeek}`,
                     type: '周报',
                     date: `${startOfWeek} 至 ${endOfWeek}`,
                     content: result.content,
-                    taskCount: this.tasks.filter(t => t.completed).length
+                    taskCount: weeklyCompletedTasks.length
                 });
             } else {
                 console.error('❌ 周报生成失败:', result.error);
@@ -1439,13 +1444,20 @@ class TaskManager {
     async saveReportToFeishu(reportData) {
         try {
             console.log('📝 保存报告到飞书表格...');
+            console.log('📊 报告数据摘要:', {
+                标题: reportData.title,
+                类型: reportData.type,
+                日期: reportData.date,
+                任务数量: reportData.taskCount,
+                内容长度: reportData.content ? reportData.content.length : 0
+            });
 
             const result = await window.feishuTaskAPI.saveReport(reportData);
 
             if (result.success) {
                 console.log('✅ 报告保存成功');
                 // 显示保存成功提示
-                this.showNotification(`📝 ${reportData.type}已保存到飞书表格`, 'success');
+                this.showNotification(`📝 ${reportData.type}已保存到飞书表格 (${reportData.taskCount}个任务)`, 'success');
 
                 // 在控制台显示飞书表格链接
                 console.log('🔗 查看飞书表格: https://wcn0pu8598xr.feishu.cn/base/DPIqbB7OWa05ZZsiQi8cP1jnnBb?table=tblgMxHJqUJH2s8A&view=vewLnkMPnY');

@@ -65,9 +65,9 @@ async function saveReportToFeishu(accessToken, reportData) {
         // 构建字段数据（根据飞书表格的实际字段名）
         const fieldsData = {
             '类型': reportData.type || '',
+            '标题': reportData.title || '',
             '内容': reportData.content || '',
             '日期': reportData.date || '',
-            '标题': reportData.title || '',
             '任务数量': reportData.taskCount || 0,
             '生成时间': new Date().toLocaleString('zh-CN', {
                 timeZone: 'Asia/Shanghai',
