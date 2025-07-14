@@ -67,19 +67,18 @@ async function saveReportToFeishu(accessToken, reportData) {
     return new Promise((resolve, reject) => {
         const appToken = 'DPIqbB7OWa05ZZsiQi8cP1jnnBb'; // 直接使用解析好的值，与任务操作保持一致
         
-        // 构建字段数据（简化版本，逐步测试）
+        // 构建字段数据（根据飞书表格实际字段名）
         const fieldsData = {};
 
-        // 先只测试基本字段
-        fieldsData['类型'] = String(reportData.type || '');
-        fieldsData['日期'] = String(reportData.date || '');
+        // 基本字段 - 对应表格中的字段
+        fieldsData['类型'] = String(reportData.type || '');        // 对应"类型"列
+        fieldsData['标题'] = String(reportData.title || '');       // 对应"标题"列
+        fieldsData['日期'] = String(reportData.date || '');        // 对应"日期"列
 
-        // 标题字段 - 限制长度
-        let title = String(reportData.title || '');
-        if (title.length > 200) {
-            title = title.substring(0, 200);
+        // 限制标题长度
+        if (fieldsData['标题'].length > 200) {
+            fieldsData['标题'] = fieldsData['标题'].substring(0, 200);
         }
-        fieldsData['标题'] = title;
 
         // 内容字段 - 保存完整内容
         let content = String(reportData.content || '');
@@ -92,20 +91,22 @@ async function saveReportToFeishu(accessToken, reportData) {
 
         fieldsData['内容'] = content;
 
-        // 恢复其他字段（基本保存功能已验证正常）
+        // 其他字段 - 对应表格中的字段
         if (reportData.taskCount !== undefined && reportData.taskCount !== null) {
-            fieldsData['任务数量'] = Number(reportData.taskCount) || 0;
+            fieldsData['任务数量'] = Number(reportData.taskCount) || 0;  // 对应"任务数量"列
         }
 
-        fieldsData['生成时间'] = Date.now();
+        fieldsData['生成时间'] = Date.now();  // 对应"生成时间"列，使用时间戳格式
 
+        console.log('📊 字段映射验证:');
+        console.log('飞书表格字段: 类型、标题、内容、日期、任务数量、生成时间');
         console.log('准备保存的字段数据:');
         Object.keys(fieldsData).forEach(key => {
             const value = fieldsData[key];
             if (key === '内容') {
-                console.log(`  ${key}: ${typeof value} - 长度 ${value ? String(value).length : 0} 字符`);
+                console.log(`  ✓ ${key}: ${typeof value} - 长度 ${value ? String(value).length : 0} 字符`);
             } else {
-                console.log(`  ${key}: ${typeof value} - ${value ? String(value).substring(0, 200) : 'null'}${value && String(value).length > 200 ? '...' : ''}`);
+                console.log(`  ✓ ${key}: ${typeof value} - ${value ? String(value).substring(0, 200) : 'null'}${value && String(value).length > 200 ? '...' : ''}`);
             }
         });
         console.log('报告内容长度:', reportData.content ? reportData.content.length : 0);
