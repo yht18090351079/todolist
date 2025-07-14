@@ -1148,9 +1148,8 @@ class TaskManager {
     async generateDailyReport() {
         try {
             console.log('📅 开始生成日报...');
-            this.showLoading(true);
 
-            // 显示报告模态框
+            // 显示报告模态框（不显示遮罩）
             this.showReportModal('📅 今日工作日报');
 
             // 显示进度过程
@@ -1172,8 +1171,6 @@ class TaskManager {
         } catch (error) {
             console.error('❌ 日报生成异常:', error);
             document.getElementById('reportText').innerHTML = `<div class="error-message">❌ 日报生成异常: ${error.message}</div>`;
-        } finally {
-            this.showLoading(false);
         }
     }
 
@@ -1207,9 +1204,8 @@ class TaskManager {
     async generateWeeklyReport() {
         try {
             console.log('📊 开始生成周报...');
-            this.showLoading(true);
 
-            // 显示报告模态框
+            // 显示报告模态框（不显示遮罩）
             this.showReportModal('📊 本周工作周报');
 
             // 显示进度过程
@@ -1228,8 +1224,6 @@ class TaskManager {
         } catch (error) {
             console.error('❌ 周报生成异常:', error);
             document.getElementById('reportText').innerHTML = `<div class="error-message">❌ 周报生成异常: ${error.message}</div>`;
-        } finally {
-            this.showLoading(false);
         }
     }
 
@@ -1250,30 +1244,42 @@ class TaskManager {
         const isDaily = type === 'daily';
 
         const steps = isDaily ? [
-            '🔍 正在分析今日完成的任务...',
-            '📊 正在统计任务完成情况...',
-            '🤖 正在连接AI服务...',
-            '✍️ AI正在生成专业日报...'
+            { text: '🔍 正在扫描任务数据库...', detail: '检索今日所有任务记录' },
+            { text: '📅 正在筛选今日完成任务...', detail: '基于完成时间精确筛选' },
+            { text: '📊 正在分析任务完成情况...', detail: '统计项目分布和工作量' },
+            { text: '🧠 正在构建分析提示词...', detail: '为AI准备专业的分析指令' },
+            { text: '🤖 正在连接豆包AI服务...', detail: '建立安全的API连接' },
+            { text: '✍️ AI正在深度分析生成日报...', detail: '智能分析工作成果和建议' }
         ] : [
-            '🔍 正在分析本周完成的任务...',
-            '📊 正在统计周度工作数据...',
-            '📈 正在分析工作趋势...',
-            '🤖 正在连接AI服务...',
-            '✍️ AI正在生成专业周报...'
+            { text: '🔍 正在扫描任务数据库...', detail: '检索本周所有任务记录' },
+            { text: '📅 正在计算本周时间范围...', detail: '确定周一到周日的准确时间' },
+            { text: '📊 正在筛选本周完成任务...', detail: '基于完成时间精确筛选' },
+            { text: '📈 正在分析工作趋势数据...', detail: '统计项目进展和效率指标' },
+            { text: '🧠 正在构建分析提示词...', detail: '为AI准备专业的分析指令' },
+            { text: '🤖 正在连接豆包AI服务...', detail: '建立安全的API连接' },
+            { text: '✍️ AI正在深度分析生成周报...', detail: '智能分析工作成果和规划建议' }
         ];
 
         for (let i = 0; i < steps.length; i++) {
+            const step = steps[i];
+            const progress = ((i + 1) / steps.length) * 100;
+
             reportText.innerHTML = `<div class="generating-report">
-                <i class="fas fa-robot"></i>
-                <div class="progress-text">${steps[i]}</div>
+                <div class="robot-icon">🤖</div>
+                <div class="progress-text">${step.text}</div>
+                <div class="progress-detail">${step.detail}</div>
                 <div class="progress-bar">
-                    <div class="progress-fill" style="width: ${((i + 1) / steps.length) * 100}%"></div>
+                    <div class="progress-fill" style="width: ${progress}%"></div>
                 </div>
-                <div class="progress-percent">${Math.round(((i + 1) / steps.length) * 100)}%</div>
+                <div class="progress-info">
+                    <span class="progress-percent">${Math.round(progress)}%</span>
+                    <span class="progress-step">步骤 ${i + 1}/${steps.length}</span>
+                </div>
             </div>`;
 
-            // 每步等待一段时间
-            await new Promise(resolve => setTimeout(resolve, 800));
+            // 每步等待一段时间，最后一步稍长
+            const delay = i === steps.length - 1 ? 1500 : 1000;
+            await new Promise(resolve => setTimeout(resolve, delay));
         }
     }
 
