@@ -67,44 +67,50 @@ async function saveReportToFeishu(accessToken, reportData) {
     return new Promise((resolve, reject) => {
         const appToken = 'DPIqbB7OWa05ZZsiQi8cP1jnnBb'; // 直接使用解析好的值，与任务操作保持一致
         
-        // 构建字段数据（最简化测试版本）
+        // 构建字段数据（恢复完整功能，保留特殊字符清理）
         const fieldsData = {};
 
-        // 只测试最基本的字段，逐步添加
-        fieldsData['类型'] = String(reportData.type || '').replace(/[^\u4e00-\u9fa5a-zA-Z0-9]/g, '');  // 只保留中英文数字
+        // 基本字段 - 轻度清理特殊字符
+        fieldsData['类型'] = String(reportData.type || '');
 
-        // 简化标题，移除特殊字符
+        // 标题 - 保留更多字符，只移除可能有问题的字符
         let title = String(reportData.title || '');
-        title = title.replace(/[^\u4e00-\u9fa5a-zA-Z0-9\s\-]/g, '');  // 只保留中英文数字空格横线
-        if (title.length > 100) {
-            title = title.substring(0, 100);
+        title = title.replace(/[\x00-\x1f\x7f-\x9f]/g, '');  // 移除控制字符
+        if (title.length > 200) {
+            title = title.substring(0, 200);
         }
         fieldsData['标题'] = title;
 
-        // 简化日期
-        let date = String(reportData.date || '');
-        date = date.replace(/[^\u4e00-\u9fa5a-zA-Z0-9\s\-至]/g, '');  // 只保留基本字符
-        fieldsData['日期'] = date;
+        // 日期 - 保持原样
+        fieldsData['日期'] = String(reportData.date || '');
 
-        // 暂时跳过内容字段进行测试
-        fieldsData['内容'] = '测试内容';
+        // 内容字段 - 恢复完整内容，但清理控制字符
+        let content = String(reportData.content || '');
+        content = content.replace(/[\x00-\x1f\x7f-\x9f]/g, '');  // 移除控制字符
 
-        // 暂时跳过其他字段
-        // fieldsData['任务数量'] = Number(reportData.taskCount) || 0;
-        // fieldsData['生成时间'] = Date.now();
+        // 合理的长度限制
+        if (content.length > 50000) {
+            content = content.substring(0, 50000) + '\n\n...(内容过长，已截断到50000字符)';
+            console.log('⚠️ 报告内容超过50000字符，已适当截断');
+        }
+        fieldsData['内容'] = content;
 
-        console.log('🧪 最简化测试版本 - 字段数据:');
-        console.log('原始数据:', {
-            type: reportData.type,
-            title: reportData.title ? reportData.title.substring(0, 50) + '...' : null,
-            date: reportData.date,
-            taskCount: reportData.taskCount
-        });
+        // 恢复其他字段
+        if (reportData.taskCount !== undefined && reportData.taskCount !== null) {
+            fieldsData['任务数量'] = Number(reportData.taskCount) || 0;
+        }
 
-        console.log('清理后的字段数据:');
+        fieldsData['生成时间'] = Date.now();
+
+        console.log('📊 完整功能版本 - 字段数据:');
+        console.log('准备保存的字段数据:');
         Object.keys(fieldsData).forEach(key => {
             const value = fieldsData[key];
-            console.log(`  ✓ ${key}: "${value}" (${typeof value}, 长度: ${String(value).length})`);
+            if (key === '内容') {
+                console.log(`  ✓ ${key}: ${typeof value} - 长度 ${value ? String(value).length : 0} 字符`);
+            } else {
+                console.log(`  ✓ ${key}: ${typeof value} - ${value ? String(value).substring(0, 100) : 'null'}${value && String(value).length > 100 ? '...' : ''}`);
+            }
         });
         console.log('报告内容长度:', reportData.content ? reportData.content.length : 0);
 
@@ -219,41 +225,7 @@ exports.handler = async (event, context) => {
             };
         }
 
-        // 如果是测试模式，使用极简数据
-        if (reportData.title.includes('测试') || process.env.NODE_ENV === 'test') {
-            console.log('🧪 使用极简测试数据');
-            const testData = {
-                fields: {
-                    '类型': '测试',
-                    '标题': '测试报告',
-                    '内容': '测试内容',
-                    '日期': '2025-07-14'
-                }
-            };
 
-            // 直接尝试保存测试数据
-            try {
-                const accessToken = await getAccessToken();
-                const result = await saveReportToFeishu(accessToken, {
-                    type: '测试',
-                    title: '测试报告',
-                    content: '测试内容',
-                    date: '2025-07-14'
-                });
-
-                return {
-                    statusCode: 200,
-                    headers,
-                    body: JSON.stringify({
-                        success: true,
-                        message: '测试数据保存成功',
-                        data: result
-                    })
-                };
-            } catch (error) {
-                console.error('测试数据保存失败:', error);
-            }
-        }
 
         // 验证字段长度
         if (reportData.title && reportData.title.length > 500) {
