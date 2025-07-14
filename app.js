@@ -1253,6 +1253,31 @@ class TaskManager {
     showReportModal(title) {
         document.getElementById('reportTitle').textContent = title;
         document.getElementById('reportModal').classList.add('show');
+
+        // 添加查看飞书表格按钮（如果还没有）
+        this.addFeishuLinkButton();
+    }
+
+    // 添加查看飞书表格按钮
+    addFeishuLinkButton() {
+        const modalFooter = document.querySelector('#reportModal .modal-footer');
+        if (modalFooter && !document.getElementById('viewFeishuBtn')) {
+            const feishuBtn = document.createElement('button');
+            feishuBtn.id = 'viewFeishuBtn';
+            feishuBtn.className = 'btn btn-secondary';
+            feishuBtn.innerHTML = '<i class="fas fa-external-link-alt"></i> 查看飞书表格';
+            feishuBtn.onclick = () => {
+                window.open('https://wcn0pu8598xr.feishu.cn/base/DPIqbB7OWa05ZZsiQi8cP1jnnBb?table=tblgMxHJqUJH2s8A&view=vewLnkMPnY', '_blank');
+            };
+
+            // 插入到复制按钮之前
+            const copyBtn = document.getElementById('copyReportBtn');
+            if (copyBtn) {
+                modalFooter.insertBefore(feishuBtn, copyBtn);
+            } else {
+                modalFooter.appendChild(feishuBtn);
+            }
+        }
     }
 
     // 隐藏报告模态框
@@ -1420,7 +1445,10 @@ class TaskManager {
             if (result.success) {
                 console.log('✅ 报告保存成功');
                 // 显示保存成功提示
-                this.showNotification('📝 报告已保存到飞书表格', 'success');
+                this.showNotification(`📝 ${reportData.type}已保存到飞书表格`, 'success');
+
+                // 在控制台显示飞书表格链接
+                console.log('🔗 查看飞书表格: https://wcn0pu8598xr.feishu.cn/base/DPIqbB7OWa05ZZsiQi8cP1jnnBb?table=tblgMxHJqUJH2s8A&view=vewLnkMPnY');
             } else {
                 console.error('❌ 报告保存失败:', result.error);
                 this.showNotification('❌ 报告保存失败: ' + result.error, 'error');

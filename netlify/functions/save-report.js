@@ -62,12 +62,12 @@ async function saveReportToFeishu(accessToken, reportData) {
     return new Promise((resolve, reject) => {
         const appToken = parseFeishuUrl(FEISHU_CONFIG.BASE_URL);
         
-        // 构建字段数据
+        // 构建字段数据（根据飞书表格的实际字段名）
         const fieldsData = {
-            '报告标题': reportData.title || '',
-            '报告类型': reportData.type || '',
-            '生成日期': reportData.date || '',
-            '报告内容': reportData.content || '',
+            '类型': reportData.type || '',
+            '内容': reportData.content || '',
+            '日期': reportData.date || '',
+            '标题': reportData.title || '',
             '任务数量': reportData.taskCount || 0,
             '生成时间': new Date().toLocaleString('zh-CN', {
                 timeZone: 'Asia/Shanghai',
@@ -82,6 +82,7 @@ async function saveReportToFeishu(accessToken, reportData) {
         };
 
         console.log('准备保存的字段数据:', fieldsData);
+        console.log('报告内容长度:', reportData.content ? reportData.content.length : 0);
 
         const postData = JSON.stringify({ fields: fieldsData });
         
