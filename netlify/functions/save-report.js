@@ -81,22 +81,32 @@ async function saveReportToFeishu(accessToken, reportData) {
         }
         fieldsData['标题'] = title;
 
-        // 内容字段 - 大幅限制长度进行测试
+        // 内容字段 - 保存完整内容
         let content = String(reportData.content || '');
-        if (content.length > 1000) {
-            content = content.substring(0, 1000) + '\n...(已截断)';
-            console.log('⚠️ 报告内容过长，已截断到1000字符进行测试');
+
+        // 只在内容极长时才进行合理截断（飞书字段限制）
+        if (content.length > 50000) {
+            content = content.substring(0, 50000) + '\n\n...(内容过长，已截断到50000字符)';
+            console.log('⚠️ 报告内容超过50000字符，已适当截断');
         }
+
         fieldsData['内容'] = content;
 
-        // 暂时跳过可能有问题的字段
-        // fieldsData['任务数量'] = Number(reportData.taskCount) || 0;
-        // fieldsData['生成时间'] = Date.now();
+        // 恢复其他字段（基本保存功能已验证正常）
+        if (reportData.taskCount !== undefined && reportData.taskCount !== null) {
+            fieldsData['任务数量'] = Number(reportData.taskCount) || 0;
+        }
+
+        fieldsData['生成时间'] = Date.now();
 
         console.log('准备保存的字段数据:');
         Object.keys(fieldsData).forEach(key => {
             const value = fieldsData[key];
-            console.log(`  ${key}: ${typeof value} - ${value ? String(value).substring(0, 100) : 'null'}${value && String(value).length > 100 ? '...' : ''}`);
+            if (key === '内容') {
+                console.log(`  ${key}: ${typeof value} - 长度 ${value ? String(value).length : 0} 字符`);
+            } else {
+                console.log(`  ${key}: ${typeof value} - ${value ? String(value).substring(0, 200) : 'null'}${value && String(value).length > 200 ? '...' : ''}`);
+            }
         });
         console.log('报告内容长度:', reportData.content ? reportData.content.length : 0);
 
