@@ -1244,20 +1244,82 @@ class TaskManager {
         const isDaily = type === 'daily';
 
         const steps = isDaily ? [
-            { text: '🔍 正在扫描任务数据库...', detail: '检索今日所有任务记录' },
-            { text: '📅 正在筛选今日完成任务...', detail: '基于完成时间精确筛选' },
-            { text: '📊 正在分析任务完成情况...', detail: '统计项目分布和工作量' },
-            { text: '🧠 正在构建分析提示词...', detail: '为AI准备专业的分析指令' },
-            { text: '🤖 正在连接豆包AI服务...', detail: '建立安全的API连接' },
-            { text: '✍️ AI正在深度分析生成日报...', detail: '智能分析工作成果和建议' }
+            {
+                text: '🔍 正在扫描任务数据库...',
+                detail: '从飞书多维表格检索今日所有任务记录',
+                tech: '连接飞书API，获取任务数据'
+            },
+            {
+                text: '📅 正在筛选今日完成任务...',
+                detail: '基于完成时间戳进行精确的日期范围筛选',
+                tech: '时间范围: 今日00:00:00 - 23:59:59'
+            },
+            {
+                text: '📊 正在分析任务完成情况...',
+                detail: '统计项目分布、工作量和完成效率指标',
+                tech: '计算任务数量、项目分类、时间分布'
+            },
+            {
+                text: '🧠 正在构建AI分析提示词...',
+                detail: '为豆包AI准备专业的工作分析指令和上下文',
+                tech: '包含任务详情、完成时间、项目信息'
+            },
+            {
+                text: '🤖 正在连接豆包AI服务...',
+                detail: '建立与字节跳动豆包大模型的安全连接',
+                tech: 'API: ark.cn-beijing.volces.com'
+            },
+            {
+                text: '🎯 AI正在深度分析任务数据...',
+                detail: '豆包AI运用专业知识分析工作成果和效率',
+                tech: '模型: doubao-seed-1-6-250615'
+            },
+            {
+                text: '✍️ 正在生成专业日报内容...',
+                detail: 'AI智能生成工作总结、成果分析和改进建议',
+                tech: '输出格式: Markdown专业报告'
+            }
         ] : [
-            { text: '🔍 正在扫描任务数据库...', detail: '检索本周所有任务记录' },
-            { text: '📅 正在计算本周时间范围...', detail: '确定周一到周日的准确时间' },
-            { text: '📊 正在筛选本周完成任务...', detail: '基于完成时间精确筛选' },
-            { text: '📈 正在分析工作趋势数据...', detail: '统计项目进展和效率指标' },
-            { text: '🧠 正在构建分析提示词...', detail: '为AI准备专业的分析指令' },
-            { text: '🤖 正在连接豆包AI服务...', detail: '建立安全的API连接' },
-            { text: '✍️ AI正在深度分析生成周报...', detail: '智能分析工作成果和规划建议' }
+            {
+                text: '🔍 正在扫描任务数据库...',
+                detail: '从飞书多维表格检索本周所有任务记录',
+                tech: '连接飞书API，获取完整任务数据集'
+            },
+            {
+                text: '📅 正在计算本周时间范围...',
+                detail: '智能计算周一到周日的准确时间边界',
+                tech: '周范围: 本周一00:00 - 本周日23:59'
+            },
+            {
+                text: '📊 正在筛选本周完成任务...',
+                detail: '基于完成时间戳进行精确的周范围筛选',
+                tech: '时间解析: 支持多种时间格式'
+            },
+            {
+                text: '📈 正在分析工作趋势数据...',
+                detail: '统计项目进展、效率指标和工作分布模式',
+                tech: '计算完成率、项目占比、时间分布'
+            },
+            {
+                text: '🧠 正在构建AI分析提示词...',
+                detail: '为豆包AI准备专业的周度工作分析指令',
+                tech: '包含趋势分析、对比数据、规划建议'
+            },
+            {
+                text: '🤖 正在连接豆包AI服务...',
+                detail: '建立与字节跳动豆包大模型的安全连接',
+                tech: 'API: ark.cn-beijing.volces.com'
+            },
+            {
+                text: '🎯 AI正在深度分析周度数据...',
+                detail: '豆包AI运用专业知识分析工作趋势和效率',
+                tech: '模型: doubao-seed-1-6-250615'
+            },
+            {
+                text: '✍️ 正在生成专业周报内容...',
+                detail: 'AI智能生成工作总结、趋势分析和下周规划',
+                tech: '输出格式: Markdown专业周报'
+            }
         ];
 
         for (let i = 0; i < steps.length; i++) {
@@ -1266,19 +1328,24 @@ class TaskManager {
 
             reportText.innerHTML = `<div class="generating-report">
                 <div class="robot-icon">🤖</div>
-                <div class="progress-text">${step.text}</div>
+                <div class="progress-header">
+                    <div class="progress-text">${step.text}</div>
+                    <div class="progress-step-info">步骤 ${i + 1}/${steps.length}</div>
+                </div>
                 <div class="progress-detail">${step.detail}</div>
+                <div class="progress-tech">${step.tech}</div>
                 <div class="progress-bar">
                     <div class="progress-fill" style="width: ${progress}%"></div>
                 </div>
                 <div class="progress-info">
                     <span class="progress-percent">${Math.round(progress)}%</span>
-                    <span class="progress-step">步骤 ${i + 1}/${steps.length}</span>
+                    <span class="progress-status">${i === steps.length - 1 ? '即将完成' : '处理中...'}</span>
                 </div>
+                <div class="progress-time">预计剩余时间: ${Math.max(1, steps.length - i - 1)} 秒</div>
             </div>`;
 
             // 每步等待一段时间，最后一步稍长
-            const delay = i === steps.length - 1 ? 1500 : 1000;
+            const delay = i === steps.length - 1 ? 2000 : 1200;
             await new Promise(resolve => setTimeout(resolve, delay));
         }
     }

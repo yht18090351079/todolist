@@ -916,12 +916,13 @@ body {
 
 .modal-content {
     background: white;
-    border-radius: 12px;
-    width: 90%;
-    max-width: 600px;
-    max-height: 90vh;
+    border-radius: 16px;
+    width: 95%;
+    max-width: 1000px;
+    max-height: 95vh;
     overflow-y: auto;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    box-shadow: 0 25px 80px rgba(0,0,0,0.3);
+    animation: modalSlideIn 0.3s ease-out;
 }
 
 .modal-header {
@@ -950,8 +951,21 @@ body {
     color: #2d3748;
 }
 
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-50px) scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
 .modal-body {
-    padding: 1.5rem;
+    padding: 2rem;
+    line-height: 1.6;
+    min-height: 500px;
 }
 
 .modal-footer {
@@ -1182,32 +1196,62 @@ body {
 
 .generating-report {
     text-align: center;
-    padding: 2rem;
+    padding: 3rem;
     color: #4299e1;
-    font-size: 1rem;
-    max-width: 500px;
+    font-size: 1.1rem;
+    max-width: 700px;
     margin: 0 auto;
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
 }
 
 .robot-icon {
-    font-size: 3rem;
-    margin-bottom: 1.5rem;
+    font-size: 4rem;
+    margin-bottom: 2rem;
     display: block;
     /* 移除旋转动画 */
 }
 
+.progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
 .progress-text {
-    margin: 1rem 0 0.5rem 0;
-    font-size: 1rem;
+    font-size: 1.2rem;
     color: #2d3748;
+    font-weight: 700;
+    flex: 1;
+}
+
+.progress-step-info {
+    font-size: 0.875rem;
+    color: #4299e1;
     font-weight: 600;
+    background: #e3f2fd;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
 }
 
 .progress-detail {
+    margin: 0.5rem 0;
+    font-size: 1rem;
+    color: #4a5568;
+    line-height: 1.5;
+}
+
+.progress-tech {
     margin: 0.5rem 0 1.5rem 0;
     font-size: 0.875rem;
     color: #718096;
-    font-style: italic;
+    font-family: 'Monaco', 'Menlo', monospace;
+    background: #f7fafc;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    border-left: 3px solid #4299e1;
 }
 
 .progress-bar {
@@ -1248,18 +1292,30 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-top: 1rem;
+    margin: 1rem 0 0.5rem 0;
 }
 
 .progress-percent {
-    font-size: 1rem;
+    font-size: 1.25rem;
     color: #4299e1;
-    font-weight: 600;
+    font-weight: 700;
 }
 
-.progress-step {
+.progress-status {
     font-size: 0.875rem;
-    color: #718096;
+    color: #48bb78;
+    font-weight: 600;
+    background: #e6fffa;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+}
+
+.progress-time {
+    margin-top: 1rem;
+    font-size: 0.875rem;
+    color: #a0aec0;
+    text-align: center;
+    font-style: italic;
 }
 
 @keyframes spin {
