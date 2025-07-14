@@ -165,7 +165,38 @@ class FeishuTaskAPI {
         }
     }
 
+    // 保存报告到飞书表格
+    async saveReport(reportData) {
+        try {
+            console.log('📝 开始保存报告到飞书表格...');
+            console.log('报告数据:', reportData);
 
+            const response = await fetch(`${this.proxyUrl}/save-report`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(reportData)
+            });
+
+            console.log('HTTP响应状态:', response.status);
+            console.log('HTTP响应OK:', response.ok);
+
+            const result = await response.json();
+            console.log('API响应结果:', result);
+
+            if (result.success) {
+                console.log('✅ 报告保存成功');
+                return { success: true, data: result.data };
+            } else {
+                console.error('❌ API返回失败:', result);
+                throw new Error(result.message || result.error || '保存报告失败');
+            }
+        } catch (error) {
+            console.error('❌ 保存报告失败:', error);
+            return { success: false, error: error.message };
+        }
+    }
 
     // 健康检查
     async checkHealth() {

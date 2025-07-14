@@ -1,0 +1,210 @@
+// Netlify Function - 保存报告到飞书表格
+const https = require('https');
+
+// 飞书配置
+const FEISHU_CONFIG = {
+    APP_ID: 'cli_a8d4bd05dbf8100b',
+    APP_SECRET: 'IRUdgTp1k825LXp1kz2W4gxcvaRAqtcv',
+    BASE_URL: 'https://wcn0pu8598xr.feishu.cn/base/DPIqbB7OWa05ZZsiQi8cP1jnnBb',
+    REPORT_TABLE_ID: 'tblgMxHJqUJH2s8A' // 报告表格ID
+};
+
+// 获取访问令牌
+async function getAccessToken() {
+    return new Promise((resolve, reject) => {
+        const postData = JSON.stringify({
+            app_id: FEISHU_CONFIG.APP_ID,
+            app_secret: FEISHU_CONFIG.APP_SECRET
+        });
+
+        const options = {
+            hostname: 'open.feishu.cn',
+            port: 443,
+            path: '/open-apis/auth/v3/tenant_access_token/internal',
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Content-Length': Buffer.byteLength(postData)
+            }
+        };
+
+        const req = https.request(options, (res) => {
+            let data = '';
+            res.on('data', (chunk) => data += chunk);
+            res.on('end', () => {
+                try {
+                    const result = JSON.parse(data);
+                    if (result.code === 0) {
+                        resolve(result.tenant_access_token);
+                    } else {
+                        reject(new Error(`获取访问令牌失败: ${result.msg || '未知错误'}`));
+                    }
+                } catch (error) {
+                    reject(error);
+                }
+            });
+        });
+
+        req.on('error', reject);
+        req.write(postData);
+        req.end();
+    });
+}
+
+// 解析飞书URL获取app_token
+function parseFeishuUrl(url) {
+    const match = url.match(/\/base\/([^?]+)/);
+    return match ? match[1] : null;
+}
+
+// 保存报告到飞书表格
+async function saveReportToFeishu(accessToken, reportData) {
+    return new Promise((resolve, reject) => {
+        const appToken = parseFeishuUrl(FEISHU_CONFIG.BASE_URL);
+        
+        // 构建字段数据
+        const fieldsData = {
+            '报告标题': reportData.title || '',
+            '报告类型': reportData.type || '',
+            '生成日期': reportData.date || '',
+            '报告内容': reportData.content || '',
+            '任务数量': reportData.taskCount || 0,
+            '生成时间': new Date().toLocaleString('zh-CN', {
+                timeZone: 'Asia/Shanghai',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            })
+        };
+
+        console.log('准备保存的字段数据:', fieldsData);
+
+        const postData = JSON.stringify({ fields: fieldsData });
+        
+        const options = {
+            hostname: 'open.feishu.cn',
+            port: 443,
+            path: `/open-apis/bitable/v1/apps/${appToken}/tables/${FEISHU_CONFIG.REPORT_TABLE_ID}/records`,
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json',
+                'Content-Length': Buffer.byteLength(postData)
+            }
+        };
+
+        console.log('飞书API请求路径:', options.path);
+        console.log('请求数据:', postData);
+
+        const req = https.request(options, (res) => {
+            let data = '';
+            res.on('data', (chunk) => data += chunk);
+            res.on('end', () => {
+                try {
+                    const result = JSON.parse(data);
+                    console.log('飞书API响应:', result);
+                    
+                    if (result.code === 0) {
+                        resolve(result.data);
+                    } else {
+                        reject(new Error(`保存报告失败: ${result.msg || '未知错误'}`));
+                    }
+                } catch (error) {
+                    reject(error);
+                }
+            });
+        });
+
+        req.on('error', reject);
+        req.write(postData);
+        req.end();
+    });
+}
+
+// 主函数
+exports.handler = async (event, context) => {
+    // 设置CORS头
+    const headers = {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Content-Type',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+        'Content-Type': 'application/json'
+    };
+
+    // 处理OPTIONS请求
+    if (event.httpMethod === 'OPTIONS') {
+        return {
+            statusCode: 200,
+            headers,
+            body: ''
+        };
+    }
+
+    // 只允许POST请求
+    if (event.httpMethod !== 'POST') {
+        return {
+            statusCode: 405,
+            headers,
+            body: JSON.stringify({
+                success: false,
+                error: '只允许POST请求'
+            })
+        };
+    }
+
+    try {
+        console.log('开始处理保存报告请求...');
+        
+        // 解析请求数据
+        const reportData = JSON.parse(event.body);
+        console.log('接收到的报告数据:', reportData);
+
+        // 验证必要字段
+        if (!reportData.title || !reportData.type || !reportData.content) {
+            return {
+                statusCode: 400,
+                headers,
+                body: JSON.stringify({
+                    success: false,
+                    error: '缺少必要字段: title, type, content'
+                })
+            };
+        }
+
+        // 获取访问令牌
+        console.log('获取飞书访问令牌...');
+        const accessToken = await getAccessToken();
+        console.log('访问令牌获取成功');
+
+        // 保存报告到飞书
+        console.log('保存报告到飞书表格...');
+        const result = await saveReportToFeishu(accessToken, reportData);
+        console.log('报告保存成功:', result);
+
+        return {
+            statusCode: 200,
+            headers,
+            body: JSON.stringify({
+                success: true,
+                message: '报告保存成功',
+                data: result
+            })
+        };
+
+    } catch (error) {
+        console.error('保存报告失败:', error);
+        
+        return {
+            statusCode: 500,
+            headers,
+            body: JSON.stringify({
+                success: false,
+                error: error.message || '保存报告失败'
+            })
+        };
+    }
+};

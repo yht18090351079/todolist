@@ -1164,6 +1164,15 @@ class TaskManager {
             if (result.success) {
                 console.log('✅ 日报生成成功');
                 this.displayReport(result.content);
+
+                // 保存日报到飞书表格
+                await this.saveReportToFeishu({
+                    title: `工作日报 - ${today}`,
+                    type: '日报',
+                    date: today,
+                    content: result.content,
+                    taskCount: this.tasks.filter(t => t.completed).length
+                });
             } else {
                 console.error('❌ 日报生成失败:', result.error);
                 document.getElementById('reportText').innerHTML = `<div class="error-message">❌ 日报生成失败: ${result.error}</div>`;
@@ -1217,6 +1226,19 @@ class TaskManager {
             if (result.success) {
                 console.log('✅ 周报生成成功');
                 this.displayReport(result.content);
+
+                // 获取本周时间范围用于标题
+                const today = new Date();
+                const { startOfWeek, endOfWeek } = window.doubaoAPI.getWeekRange(today);
+
+                // 保存周报到飞书表格
+                await this.saveReportToFeishu({
+                    title: `工作周报 - ${startOfWeek} 至 ${endOfWeek}`,
+                    type: '周报',
+                    date: `${startOfWeek} 至 ${endOfWeek}`,
+                    content: result.content,
+                    taskCount: this.tasks.filter(t => t.completed).length
+                });
             } else {
                 console.error('❌ 周报生成失败:', result.error);
                 document.getElementById('reportText').innerHTML = `<div class="error-message">❌ 周报生成失败: ${result.error}</div>`;
@@ -1386,6 +1408,47 @@ class TaskManager {
         weeklyTasks.forEach(task => {
             console.log(`  - ${task.title} (完成时间: ${task.completedTime || task.完成时间})`);
         });
+    }
+
+    // 保存报告到飞书表格
+    async saveReportToFeishu(reportData) {
+        try {
+            console.log('📝 保存报告到飞书表格...');
+
+            const result = await window.feishuTaskAPI.saveReport(reportData);
+
+            if (result.success) {
+                console.log('✅ 报告保存成功');
+                // 显示保存成功提示
+                this.showNotification('📝 报告已保存到飞书表格', 'success');
+            } else {
+                console.error('❌ 报告保存失败:', result.error);
+                this.showNotification('❌ 报告保存失败: ' + result.error, 'error');
+            }
+        } catch (error) {
+            console.error('❌ 保存报告异常:', error);
+            this.showNotification('❌ 保存报告异常: ' + error.message, 'error');
+        }
+    }
+
+    // 显示通知
+    showNotification(message, type = 'info') {
+        // 创建通知元素
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.textContent = message;
+
+        // 添加到页面
+        document.body.appendChild(notification);
+
+        // 显示动画
+        setTimeout(() => notification.classList.add('show'), 100);
+
+        // 自动隐藏
+        setTimeout(() => {
+            notification.classList.remove('show');
+            setTimeout(() => document.body.removeChild(notification), 300);
+        }, 3000);
     }
 
     // 复制报告

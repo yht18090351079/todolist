@@ -1332,3 +1332,35 @@ body {
     border-radius: 8px;
     border: 1px solid #feb2b2;
 }
+
+/* 通知样式 */
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    color: white;
+    font-weight: 600;
+    z-index: 10000;
+    transform: translateX(400px);
+    transition: transform 0.3s ease;
+    max-width: 400px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+}
+
+.notification.show {
+    transform: translateX(0);
+}
+
+.notification-success {
+    background: linear-gradient(135deg, #48bb78, #38a169);
+}
+
+.notification-error {
+    background: linear-gradient(135deg, #e53e3e, #c53030);
+}
+
+.notification-info {
+    background: linear-gradient(135deg, #4299e1, #3182ce);
+}
